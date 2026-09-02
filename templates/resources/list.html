@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Resources — MediRoute DSS{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Resources</li>{% endblock %}
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title"><i class="bi bi-boxes text-info me-2"></i>Resource Inventory</h1>
+    </div>
+    {% if current_user.role == 'admin' %}
+    <div class="page-header-actions">
+        <a href="{{ url_for('hospital.add_resource_form') }}" class="btn btn-success fw-bold">
+            <i class="bi bi-plus-circle-fill me-2"></i>Add Resource
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card mr-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mr-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Resource Name</th>
+                        <th>Type</th>
+                        <th>Department</th>
+                        <th>Hospital</th>
+                        <th>Available</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        {% if current_user.role in ['admin','operator'] %}<th>Actions</th>{% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in resources %}
+                    <tr>
+                        <td class="fw-bold">{{ r.resource_name }}</td>
+                        <td><span class="badge bg-secondary">{{ r.resource_type }}</span></td>
+                        <td><span class="badge bg-info text-dark">{{ r.department or 'General' }}</span></td>
+                        <td class="text-muted small">{{ r.hospital_name }}</td>
+                        <td>
+                            <span class="fw-bold {% if r.available_quantity == 0 %}text-danger{% elif r.available_quantity < r.quantity // 2 %}text-warning{% else %}text-success{% endif %}">
+                                {{ r.available_quantity }}
+                            </span>
+                        </td>
+                        <td class="text-muted">{{ r.quantity }}</td>
+                        <td>
+                            <span class="badge {% if r.status=='available' %}bg-success{% elif r.status=='in_use' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ r.status|replace('_',' ')|upper }}
+                            </span>
+                        </td>
+                        {% if current_user.role in ['admin','operator'] %}
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{{ url_for('hospital.edit_resource_form', rid=r.id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                {% if current_user.role == 'admin' %}
+                                <button class="btn btn-sm btn-outline-danger" title="Delete"
+                                        data-bs-toggle="modal" data-bs-target="#delModal"
+                                        data-name="{{ r.resource_name }}"
+                                        data-action="{{ url_for('hospital.delete_resource', rid=r.id) }}">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if current_user.role == 'admin' %}
+<div class="modal fade" id="delModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">Delete resource <strong id="delName"></strong>?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="delForm" method="POST">
+                    <button type="submit" class="btn btn-danger"><i class="bi bi-trash3-fill me-1"></i>Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('delModal').addEventListener('show.bs.modal', function(e) {
+    var btn = e.relatedTarget;
+    document.getElementById('delName').textContent = btn.dataset.name;
+    document.getElementById('delForm').action = btn.dataset.action;
+});
+</script>
+{% endif %}
+{% endblock %}

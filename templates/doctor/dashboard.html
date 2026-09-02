@@ -1,0 +1,293 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Portal — {{ doctor.name }}{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Doctor Portal</li>
+{% endblock %}
+
+{% block content %}
+
+<!-- Doctor Profile & Welcome Header -->
+<div class="card border-0 shadow-sm mb-4 bg-gradient-dark text-white p-4 rounded-3" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-3" style="width:60px; height:60px;">
+                    <i class="bi bi-person-heart"></i>
+                </div>
+                <div>
+                    <h2 class="mb-1 fw-bold text-white">{{ doctor.name }}</h2>
+                    <p class="mb-0 text-white-50">
+                        <span class="badge bg-primary me-2">{{ doctor.specialization }}</span>
+                        <i class="bi bi-hospital me-1"></i> {{ doctor.hospital_name }}
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex flex-wrap gap-3 mt-3 text-white-50 small">
+                <span><i class="bi bi-award text-warning me-1"></i> {{ doctor.qualification }}</span>
+                <span><i class="bi bi-clock-history me-1"></i> {{ doctor.experience_years }} Years Experience</span>
+                <span><i class="bi bi-star-fill text-warning me-1"></i> {{ doctor.rating }} Rating</span>
+                <span><i class="bi bi-calendar-check me-1"></i> {{ doctor.working_start_time|time_fmt }} - {{ doctor.working_end_time|time_fmt }}</span>
+            </div>
+        </div>
+        <div class="col-md-4 text-md-end mt-3 mt-md-0">
+            <span class="badge {% if doctor.availability_status == 'available' %}bg-success{% elif doctor.availability_status == 'busy' %}bg-warning text-dark{% else %}bg-secondary{% endif %} fs-6 px-3 py-2">
+                <i class="bi bi-circle-fill me-1 small"></i> {{ doctor.availability_status|replace('_', ' ')|title }}
+            </span>
+            <div class="mt-3">
+                <a href="{{ url_for('doctor.list_appointments') }}" class="btn btn-sm btn-outline-light">
+                    <i class="bi bi-journal-text me-1"></i> View All Appointments
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Stats Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-card--blue">
+            <div class="stat-icon"><i class="bi bi-calendar-event-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.today_appointments }}</div>
+                <div class="stat-label">Today's Appointments</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-card--yellow">
+            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.pending_appointments }}</div>
+                <div class="stat-label">Pending Approval</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-card--green">
+            <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.completed_appointments }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="stat-card stat-card--teal">
+            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_appointments }}</div>
+                <div class="stat-label">Total Assigned</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Today's Schedule Table -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0 fw-bold text-primary">
+            <i class="bi bi-clock-fill me-2"></i> Today's Schedule
+        </h5>
+        <span class="badge bg-primary-subtle text-primary fw-semibold">{{ today_appts|length }} Booking(s) Today</span>
+    </div>
+    <div class="card-body p-0">
+        {% if today_appts %}
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Time</th>
+                        <th>Patient Name</th>
+                        <th>Details</th>
+                        <th>Emergency Level</th>
+                        <th>Room</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in today_appts %}
+                    <tr>
+                        <td class="fw-semibold text-primary">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ a.start_time|time_fmt }} - {{ a.end_time|time_fmt }}
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ a.patient_name }}</div>
+                            <small class="text-muted"><i class="bi bi-telephone me-1"></i>{{ a.phone or 'N/A' }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-light text-dark me-1">Age: {{ a.age }}</span>
+                            <span class="badge bg-light text-dark me-1">Gender: {{ a.gender }}</span>
+                        </td>
+
+                        <td>
+                            {% if a.emergency_level == 'critical' %}
+                            <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Critical</span>
+                            {% elif a.emergency_level == 'high' %}
+                            <span class="badge bg-warning text-dark">High</span>
+                            {% elif a.emergency_level == 'medium' %}
+                            <span class="badge bg-info text-dark">Medium</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Low</span>
+                            {% endif %}
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ a.room_number or 'Unassigned' }}</span></td>
+                        <td>
+                            {% if a.status == 'scheduled' %}
+                            <span class="badge bg-primary">Scheduled</span>
+                            {% elif a.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% elif a.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editModal{{ a.id }}">
+                                <i class="bi bi-pencil-square me-1"></i> Update
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-check fs-1 d-block mb-2 text-primary-subtle"></i>
+            <p class="mb-0">No appointments scheduled for today.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recent Appointments Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between">
+        <h5 class="card-title mb-0 fw-bold">
+            <i class="bi bi-list-columns-reverse me-2 text-secondary"></i> All Recent &amp; Upcoming Appointments
+        </h5>
+        <a href="{{ url_for('doctor.list_appointments') }}" class="btn btn-sm btn-link text-decoration-none">View All &rarr;</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_appts %}
+        <div class="table-responsive">
+            <table class="table align-middle table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date &amp; Time</th>
+                        <th>Patient</th>
+                        <th>Hospital</th>
+                        <th>Emergency Level</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in recent_appts %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ a.appointment_date }}</div>
+                            <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ a.start_time|time_fmt }}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ a.patient_name }}</div>
+                            <small class="text-muted">{{ a.gender }}, {{ a.age }} yrs</small>
+                        </td>
+                        <td><small>{{ a.hospital_name }}</small></td>
+                        <td>
+                            {% if a.emergency_level == 'critical' %}
+                            <span class="badge bg-danger">Critical</span>
+                            {% elif a.emergency_level == 'high' %}
+                            <span class="badge bg-warning text-dark">High</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ a.emergency_level|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if a.status == 'scheduled' %}
+                            <span class="badge bg-primary">Scheduled</span>
+                            {% elif a.status == 'completed' %}
+                            <span class="badge bg-success">Completed</span>
+                            {% elif a.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelled</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted text-truncate d-inline-block" style="max-width: 180px;">
+                                {{ a.notes or 'No notes recorded' }}
+                            </small>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal{{ a.id }}">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Appointment Update Modals -->
+{% for a in today_appts + recent_appts %}
+<div class="modal fade" id="editModal{{ a.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ a.id }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form action="{{ url_for('doctor.update_appointment', appt_id=a.id) }}" method="POST">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="editModalLabel{{ a.id }}">
+                        <i class="bi bi-journal-medical me-2 text-primary"></i> Update Appointment #{{ a.id }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3 p-3 bg-light rounded">
+                        <div class="fw-bold fs-6">{{ a.patient_name }}</div>
+                        <div class="small text-muted mb-1">
+                            <i class="bi bi-calendar3 me-1"></i> {{ a.appointment_date }} at {{ a.start_time|time_fmt }}
+                        </div>
+                        <div class="small text-muted">
+                            <i class="bi bi-hospital me-1"></i> {{ a.hospital_name }} ({{ a.room_number or 'Room N/A' }})
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Appointment Status</label>
+                        <select name="status" class="form-select">
+                            <option value="scheduled" {% if a.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                            <option value="completed" {% if a.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="pending" {% if a.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="cancelled" {% if a.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Doctor Clinical Notes</label>
+                        <textarea name="notes" class="form-textarea form-control" rows="3" placeholder="Enter diagnosis, prescription, or clinical observations...">{{ a.notes or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

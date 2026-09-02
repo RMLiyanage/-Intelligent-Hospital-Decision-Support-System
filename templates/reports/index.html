@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Reports &amp; Analytics Hub — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Reports &amp; Analytics</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-file-earmark-bar-graph-fill me-2 text-primary"></i>
+            Reports &amp; Analytics Hub
+        </h1>
+        <p class="page-subtitle">
+            Generate and export system-wide operational, inventory, stock, and daily activity reports.
+        </p>
+    </div>
+    <div class="page-header-actions d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> Print Summary
+        </button>
+    </div>
+</div>
+
+<!-- Quick Stat Overview Bar -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card mr-card border-start border-4 border-primary h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Total Hospital Beds</div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ hospital_stats.total_available_beds or 0 }} <span class="fs-6 text-muted font-monospace">/ {{ hospital_stats.total_capacity or 0 }}</span></h3>
+                    </div>
+                    <div class="rounded-3 bg-primary bg-opacity-10 p-3 text-primary fs-3">
+                        <i class="bi bi-hospital"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted">
+                    <span class="text-success fw-bold">{{ hospital_stats.total_hospitals or 0 }}</span> active hospital branches
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card mr-card border-start border-4 border-info h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">ICU Beds Available</div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ hospital_stats.total_available_icu or 0 }} <span class="fs-6 text-muted font-monospace">/ {{ hospital_stats.total_icu_beds or 0 }}</span></h3>
+                    </div>
+                    <div class="rounded-3 bg-info bg-opacity-10 p-3 text-info fs-3">
+                        <i class="bi bi-heart-pulse-fill"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted">
+                    Critical care capacity across Sri Lanka
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card mr-card border-start border-4 border-success h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Today's Emergencies</div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ daily_ops.emergencies_today or 0 }}</h3>
+                    </div>
+                    <div class="rounded-3 bg-success bg-opacity-10 p-3 text-success fs-3">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted">
+                    Processed through DSS pipeline
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6">
+        <div class="card mr-card border-start border-4 border-warning h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-semibold text-uppercase">Today's Appointments</div>
+                        <h3 class="fw-bold mb-0 text-dark">{{ daily_ops.appointments_today or 0 }}</h3>
+                    </div>
+                    <div class="rounded-3 bg-warning bg-opacity-10 p-3 text-warning fs-3">
+                        <i class="bi bi-calendar-check-fill"></i>
+                    </div>
+                </div>
+                <div class="mt-2 small text-muted">
+                    <span class="text-success fw-semibold">{{ daily_ops.completed_today or 0 }}</span> completed consultations
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Report Generation Panels -->
+<div class="row g-4 mb-4">
+
+    <!-- Report Card 1: Stock & Inventory Report -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100 shadow-sm border-top border-4 border-primary">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center"
+                         style="width: 54px; height: 54px; font-size: 1.6rem;">
+                        <i class="bi bi-boxes"></i>
+                    </div>
+                    <div>
+                        <h4 class="card-title fw-bold mb-1">Stock &amp; Inventory Report</h4>
+                        <span class="badge bg-primary-subtle text-primary">Live Resource &amp; Capacity Audit</span>
+                    </div>
+                </div>
+
+                <p class="text-muted mb-4">
+                    Generates a full real-time inventory report covering hospital bed occupancy, ICU capacity, ventilators, ambulances, medical equipment stock, and depletion alerts across all branches.
+                </p>
+
+                <div class="bg-light rounded-3 p-3 mb-4 border">
+                    <div class="row g-2 text-center">
+                        <div class="col-4 border-end">
+                            <div class="text-muted small">Total Items</div>
+                            <div class="fw-bold fs-5">{{ resource_stats.total_quantity or 0 }}</div>
+                        </div>
+                        <div class="col-4 border-end">
+                            <div class="text-muted small">Available</div>
+                            <div class="fw-bold fs-5 text-success">{{ resource_stats.total_available or 0 }}</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-muted small">Depleted/Low</div>
+                            <div class="fw-bold fs-5 {% if resource_stats.depleted_items > 0 %}text-danger{% else %}text-muted{% endif %}">
+                                {{ resource_stats.depleted_items or 0 }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('reports.stock_report') }}" class="btn btn-primary fw-bold flex-grow-1">
+                        <i class="bi bi-file-earmark-spreadsheet-fill me-2"></i>Generate Stock Report
+                    </a>
+                    <a href="{{ url_for('reports.export_csv', report_type='stock') }}" class="btn btn-outline-secondary" title="Export CSV">
+                        <i class="bi bi-download me-1"></i> CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Card 2: Daily Operations Report -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100 shadow-sm border-top border-4 border-success">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center"
+                         style="width: 54px; height: 54px; font-size: 1.6rem;">
+                        <i class="bi bi-calendar-event-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="card-title fw-bold mb-1">Daily Operations Report</h4>
+                        <span class="badge bg-success-subtle text-success">Daily Activity &amp; Consultations</span>
+                    </div>
+                </div>
+
+                <p class="text-muted mb-4">
+                    Detailed daily activity logs including emergency dispatches, doctor consultations, appointment schedules, completed care sessions, and algorithm optimization performance.
+                </p>
+
+                <!-- Quick Date Filter Form -->
+                <form action="{{ url_for('reports.daily_report') }}" method="GET" class="bg-light rounded-3 p-3 mb-4 border">
+                    <label class="form-label fw-semibold small text-muted mb-1">Select Report Date:</label>
+                    <div class="input-group">
+                        <input type="date" name="date" class="form-control" value="{{ today }}">
+                        <button type="submit" class="btn btn-success fw-semibold">
+                            <i class="bi bi-arrow-right-circle me-1"></i> View Date
+                        </button>
+                    </div>
+                </form>
+
+                <div class="mt-auto d-flex flex-wrap gap-2">
+                    <a href="{{ url_for('reports.daily_report') }}" class="btn btn-success fw-bold flex-grow-1">
+                        <i class="bi bi-calendar2-day-fill me-2"></i>Generate Today's Report
+                    </a>
+                    <a href="{{ url_for('reports.export_csv', report_type='daily', date=today) }}" class="btn btn-outline-secondary" title="Export CSV">
+                        <i class="bi bi-download me-1"></i> CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Available Hospital Branches Directory in Reporting -->
+<div class="card mr-card mb-4">
+    <div class="card-header mr-card-header bg-white d-flex justify-content-between align-items-center py-3">
+        <h5 class="card-title mb-0 fw-bold">
+            <i class="bi bi-hospital me-2 text-primary"></i> Hospital Branch Stock Direct Access
+        </h5>
+        <a href="{{ url_for('reports.stock_report') }}" class="btn btn-sm btn-outline-primary">View Full Stock Table</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Hospital Branch</th>
+                        <th>Location</th>
+                        <th>Bed Capacity</th>
+                        <th>Available Beds</th>
+                        <th>ICU Capacity</th>
+                        <th>Available ICU</th>
+                        <th class="text-end">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for h in hospitals %}
+                    <tr>
+                        <td class="fw-bold">{{ h.name }}</td>
+                        <td class="text-muted small"><i class="bi bi-geo-alt me-1"></i>Sri Lanka</td>
+                        <td><span class="badge bg-secondary">Configured</span></td>
+                        <td><span class="badge bg-success">Live Tracked</span></td>
+                        <td><span class="badge bg-secondary">Configured</span></td>
+                        <td><span class="badge bg-info text-dark">Live Tracked</span></td>
+                        <td class="text-end">
+                            <a href="{{ url_for('reports.stock_report', hospital_id=h.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-box-arrow-up-right me-1"></i> Stock Report
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

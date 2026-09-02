@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Daily Schedules — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('hospital.list_doctors') }}">Doctors</a></li>
+<li class="breadcrumb-item active">Daily Schedules</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-calendar2-week-fill me-2 text-primary"></i> Doctor Daily Schedules
+        </h1>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('hospital.list_doctors') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-person-badge-fill me-1"></i> Doctor Roster
+        </a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="card mr-card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{{ url_for('doctor.manage_daily_schedules') }}" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label for="filterDate" class="form-label fw-semibold">Schedule Date</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-calendar-event text-muted"></i></span>
+                    <input type="date" class="form-control" id="filterDate" name="date" value="{{ selected_date }}">
+                </div>
+            </div>
+            <div class="col-md-5">
+                <label for="filterDoctor" class="form-label fw-semibold">Select Doctor</label>
+                <select class="form-select" id="filterDoctor" name="doctor_id">
+                    <option value="">-- All Doctors Network-Wide --</option>
+                    {% for d in doctors %}
+                    <option value="{{ d.id }}" {% if selected_doctor_id == d.id %}selected{% endif %}>
+                        Dr. {{ d.name }} — {{ d.specialization }} ({{ d.hospital_name }})
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold">
+                    <i class="bi bi-filter me-1"></i> Filter Schedule
+                </button>
+                <a href="{{ url_for('doctor.manage_daily_schedules') }}" class="btn btn-outline-secondary" title="Reset Filters">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Doctor Duty Status Overview -->
+<div class="card mr-card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-dark fs-6">
+            <i class="bi bi-person-badge text-info me-2"></i>Specialist Live Duty &amp; Working Hours
+        </h5>
+        <span class="badge bg-secondary">{{ doctors|length }} Doctors</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mr-table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Doctor</th>
+                        <th>Specialization</th>
+                        <th>Hospital</th>
+                        <th>Working Hours</th>
+                        <th>Duty Status</th>
+                        <th class="text-end">Quick Status Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for d in doctors %}
+                    {% if not selected_doctor_id or selected_doctor_id == d.id %}
+                    <tr>
+                        <td class="fw-bold">
+                            <i class="bi bi-person-circle me-1 text-primary"></i>Dr. {{ d.name }}
+                        </td>
+                        <td><span class="badge bg-info text-dark">{{ d.specialization }}</span></td>
+                        <td class="small text-muted">{{ d.hospital_name }}</td>
+                        <td class="small text-muted">
+                            <i class="bi bi-clock me-1"></i>{{ d.working_start_time|time_fmt('09:00') }} - {{ d.working_end_time|time_fmt('17:00') }}
+                        </td>
+                        <td>
+                            <span class="badge {% if d.availability_status == 'available' %}bg-success{% elif d.availability_status == 'busy' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">
+                                {{ d.availability_status|upper }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <form method="POST" action="{{ url_for('doctor.manage_daily_schedules') }}" class="d-inline-flex gap-1">
+                                <input type="hidden" name="action" value="update_doctor_status">
+                                <input type="hidden" name="doctor_id" value="{{ d.id }}">
+                                <button type="submit" name="availability_status" value="available"
+                                        class="btn btn-sm btn-outline-success {% if d.availability_status == 'available' %}active{% endif %}" title="Set Available">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Available
+                                </button>
+                                <button type="submit" name="availability_status" value="busy"
+                                        class="btn btn-sm btn-outline-warning {% if d.availability_status == 'busy' %}active{% endif %}" title="Set Busy">
+                                    <i class="bi bi-hourglass-split me-1"></i>Busy
+                                </button>
+                                <button type="submit" name="availability_status" value="off_duty"
+                                        class="btn btn-sm btn-outline-secondary {% if d.availability_status == 'off_duty' %}active{% endif %}" title="Set Off Duty">
+                                    <i class="bi bi-slash-circle me-1"></i>Off Duty
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Appointment Schedule Slots -->
+<div class="card mr-card mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold text-dark fs-6">
+            <i class="bi bi-calendar2-check text-primary me-2"></i>Schedule Slots &amp; Appointments for <u>{{ selected_date }}</u>
+        </h5>
+        <span class="badge bg-primary fs-7">{{ schedules|length }} Bookings</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mr-table mb-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Time Slot</th>
+                        <th>Doctor</th>
+                        <th>Patient</th>
+                        <th>Hospital &amp; Room</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in schedules %}
+                    <tr>
+                        <td class="fw-bold text-primary">
+                            <i class="bi bi-clock-history me-1"></i>
+                            {{ s.start_time|time_fmt('09:00') }} - {{ s.end_time|time_fmt('09:30') }}
+                        </td>
+                        <td>
+                            <div class="fw-bold">Dr. {{ s.doctor_name }}</div>
+                            <div class="small text-muted">{{ s.doctor_specialization }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold">{{ s.patient_name }}</div>
+                            <div class="small text-muted">Age {{ s.age }} | {{ s.gender }}</div>
+                        </td>
+                        <td class="small">
+                            <div><i class="bi bi-hospital me-1 text-muted"></i>{{ s.hospital_name }}</div>
+                            <div class="text-secondary"><i class="bi bi-door-open me-1"></i>{{ s.room_number or 'Room 01' }}</div>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if s.status == 'scheduled' %}bg-primary
+                                {% elif s.status == 'completed' %}bg-success
+                                {% elif s.status == 'cancelled' %}bg-danger
+                                {% else %}bg-warning text-dark{% endif %}">
+                                {{ s.status|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    data-bs-toggle="modal" data-bs-target="#editSlotModal{{ s.id }}">
+                                <i class="bi bi-pencil-fill me-1"></i> Manage
+                            </button>
+
+                            <!-- Edit Slot Modal -->
+                            <div class="modal fade" id="editSlotModal{{ s.id }}" tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content">
+                                        <form method="POST" action="{{ url_for('doctor.manage_daily_schedules') }}">
+                                            <input type="hidden" name="action" value="update_appointment_status">
+                                            <input type="hidden" name="appointment_id" value="{{ s.id }}">
+
+                                            <div class="modal-header bg-primary text-white">
+                                                <h5 class="modal-title fs-6 fw-bold">
+                                                    <i class="bi bi-calendar-event me-2"></i>Update Slot #{{ s.id }}
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body p-4 text-start">
+                                                <div class="mb-3">
+                                                    <label class="form-label text-muted small mb-1">Doctor &amp; Patient</label>
+                                                    <div class="fw-bold">Dr. {{ s.doctor_name }} &rarr; {{ s.patient_name }}</div>
+                                                    <div class="small text-muted">{{ s.appointment_date }} ({{ s.start_time|time_fmt }} - {{ s.end_time|time_fmt }})</div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label for="slot_status_{{ s.id }}" class="form-label fw-semibold">Status</label>
+                                                    <select class="form-select" id="slot_status_{{ s.id }}" name="status" required>
+                                                        <option value="scheduled" {% if s.status == 'scheduled' %}selected{% endif %}>Scheduled</option>
+                                                        <option value="completed" {% if s.status == 'completed' %}selected{% endif %}>Completed</option>
+                                                        <option value="pending" {% if s.status == 'pending' %}selected{% endif %}>Pending</option>
+                                                        <option value="cancelled" {% if s.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    <label for="slot_notes_{{ s.id }}" class="form-label fw-semibold">Clinical / Schedule Notes</label>
+                                                    <textarea class="form-control" id="slot_notes_{{ s.id }}" name="notes" rows="3"
+                                                              placeholder="Add clinical observations or schedule updates...">{{ s.notes or '' }}</textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer bg-light">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-primary fw-bold">Save Changes</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-5">
+                            <i class="bi bi-calendar-x fs-2 d-block mb-2"></i>
+                            No consultation slots or bookings found for date <strong>{{ selected_date }}</strong>.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

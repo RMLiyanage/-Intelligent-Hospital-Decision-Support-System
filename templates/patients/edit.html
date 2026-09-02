@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Edit Patient — MediRoute DSS{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('patient.list_patients') }}">Patients</a></li>
+<li class="breadcrumb-item active">Edit Patient</li>
+{% endblock %}
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title"><i class="bi bi-pencil-square text-warning me-2"></i>Edit Patient</h1>
+        <p class="page-subtitle">Update patient record for <strong>{{ p.name }}</strong></p>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header bg-warning text-dark">
+                <span class="fw-semibold"><i class="bi bi-pencil-fill me-2"></i>Patient Details</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('patient.edit_patient', pid=p.id) }}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Full Name</label>
+                            <input type="text" class="form-control" name="name" value="{{ p.name }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold"><i class="bi bi-telephone me-1 text-primary"></i>Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" value="{{ p.phone or '' }}" placeholder="077 123 4567">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Age &amp; Gender</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="age" value="{{ p.age }}" min="1" max="120" required style="max-width:70px;">
+                                <select class="form-select" name="gender">
+                                    {% for g,lbl in [('M','Male'),('F','Female'),('Other','Other')] %}
+                                    <option value="{{ g }}" {% if p.gender == g %}selected{% endif %}>{{ lbl }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Required Specialist</label>
+                        <select class="form-select" name="required_specialization">
+                            {% for s in specs %}
+                            <option value="{{ s }}" {% if p.required_specialization == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Location</label>
+                        <select class="form-select" name="location_id" required>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}" {% if p.location_id == loc.id %}selected{% endif %}>{{ loc.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Urgency Level</label>
+                        <select class="form-select" name="emergency_level">
+                            {% for lv in ['critical','high','medium','low'] %}
+                            <option value="{{ lv }}" {% if p.emergency_level == lv %}selected{% endif %}>{{ lv|upper }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning fw-bold flex-grow-1">
+                            <i class="bi bi-check-circle-fill me-2"></i>Save Changes
+                        </button>
+                        <a href="{{ url_for('patient.list_patients') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

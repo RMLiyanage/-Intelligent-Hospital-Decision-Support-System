@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}{% if mode == 'add' %}Add New User{% else %}Edit User — {{ user.name }}{% endif %} — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+<li class="breadcrumb-item"><a href="{{ url_for('user.list_users') }}">User Management</a></li>
+<li class="breadcrumb-item active">{% if mode == 'add' %}Add User{% else %}Edit User{% endif %}</li>
+{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="bi {% if mode == 'add' %}bi-person-plus-fill text-success{% else %}bi-pencil-square text-primary{% endif %} me-2"></i>
+            {% if mode == 'add' %}Add New System User{% else %}Edit User &amp; Assign Role{% endif %}
+        </h1>
+        <p class="page-subtitle">
+            {% if mode == 'add' %}
+            Register a new system user and configure their role and permissions.
+            {% else %}
+            Update user information, reassign access role, or reset password.
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Form Card -->
+    <div class="col-lg-8">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header bg-white py-3">
+                <span class="fw-bold"><i class="bi bi-person-vcard me-2 text-primary"></i>User Account Details</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+
+                    <!-- Name & Email -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" placeholder="e.g. Ruwan Silva"
+                                   value="{{ user.name if user else '' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" placeholder="e.g. ruwan@mediroute.lk"
+                                   value="{{ user.email if user else '' }}" required>
+                        </div>
+                    </div>
+
+                    <!-- Role Selection -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Assign System Role <span class="text-danger">*</span></label>
+                        <div class="row g-3">
+                            {% set current_role = user.role if user else 'operator' %}
+                            
+                            <!-- Admin -->
+                            <div class="col-md-6">
+                                <div class="card h-100 p-3 border role-option-card {% if current_role == 'admin' %}border-danger bg-danger bg-opacity-10{% endif %}">
+                                    <div class="form-check">
+                                        <input class="form-check-input role-radio" type="radio" name="role" id="role_admin" value="admin"
+                                               {% if current_role == 'admin' %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold text-danger" for="role_admin">
+                                            <i class="bi bi-shield-lock-fill me-1"></i> Administrator
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        Full administrative access: User management, hospital configurations, analytics, and stock/daily reports.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Operator -->
+                            <div class="col-md-6">
+                                <div class="card h-100 p-3 border role-option-card {% if current_role == 'operator' %}border-warning bg-warning bg-opacity-10{% endif %}">
+                                    <div class="form-check">
+                                        <input class="form-check-input role-radio" type="radio" name="role" id="role_operator" value="operator"
+                                               {% if current_role == 'operator' %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold text-dark" for="role_operator">
+                                            <i class="bi bi-headset me-1 text-warning"></i> Emergency Operator
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        Emergency call handling: Patient registration, triage processing, and appointment booking.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Doctor -->
+                            <div class="col-md-6">
+                                <div class="card h-100 p-3 border role-option-card {% if current_role == 'doctor' %}border-success bg-success bg-opacity-10{% endif %}">
+                                    <div class="form-check">
+                                        <input class="form-check-input role-radio" type="radio" name="role" id="role_doctor" value="doctor"
+                                               {% if current_role == 'doctor' %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold text-success" for="role_doctor">
+                                            <i class="bi bi-person-heart me-1"></i> Doctor / Consultant
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        Doctor portal: View personal appointment schedule, patient records, and consultation notes.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Patient -->
+                            <div class="col-md-6">
+                                <div class="card h-100 p-3 border role-option-card {% if current_role == 'patient' %}border-info bg-info bg-opacity-10{% endif %}">
+                                    <div class="form-check">
+                                        <input class="form-check-input role-radio" type="radio" name="role" id="role_patient" value="patient"
+                                               {% if current_role == 'patient' %}checked{% endif %}>
+                                        <label class="form-check-label fw-bold text-info" for="role_patient">
+                                            <i class="bi bi-person-badge me-1"></i> Patient Account
+                                        </label>
+                                    </div>
+                                    <small class="text-muted d-block mt-2">
+                                        Patient portal: Check upcoming booked appointments and view hospital and doctor rosters.
+                                    </small>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Doctor Linking Dropdown (Visible when role is Doctor) -->
+                    <div class="mb-4" id="doctor_link_container" style="{% if current_role != 'doctor' %}display:none;{% endif %}">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-link-45deg me-1 text-success"></i>Link to Doctor Profile
+                        </label>
+                        <select name="doctor_id" class="form-select" id="doctor_select">
+                            <option value="">-- Select Doctor Record --</option>
+                            {% for d in doctors %}
+                            <option value="{{ d.id }}" {% if user and user.doctor_id == d.id %}selected{% endif %}>
+                                Dr. {{ d.name }} ({{ d.specialization }} &bull; {{ d.hospital_name }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Connects this user account directly to a consultant record in the doctor directory.</div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">
+                            {% if mode == 'add' %}Password <span class="text-danger">*</span>{% else %}Reset Password (Optional){% endif %}
+                        </label>
+                        <input type="password" name="password" class="form-control"
+                               placeholder="{% if mode == 'add' %}Enter secure password{% else %}Leave blank to keep existing password{% endif %}"
+                               {% if mode == 'add' %}required{% endif %}>
+                        {% if mode == 'edit' %}
+                        <div class="form-text">Only fill this if you wish to reset or change the user's password.</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Submit Actions -->
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn {% if mode == 'add' %}btn-success{% else %}btn-primary{% endif %} btn-lg fw-bold flex-grow-1">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            {% if mode == 'add' %}Create System User{% else %}Save User Changes{% endif %}
+                        </button>
+                        <a href="{{ url_for('user.list_users') }}" class="btn btn-outline-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Role Information Side Panel -->
+    <div class="col-lg-4">
+        <div class="card mr-card border-primary border-opacity-25 h-100">
+            <div class="card-body p-4">
+                <h5 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-shield-check me-2"></i>Role Matrix Guide
+                </h5>
+                <div class="d-flex flex-column gap-3 small">
+                    <div class="p-2 rounded bg-light border">
+                        <strong class="text-danger"><i class="bi bi-shield-fill me-1"></i>Admin:</strong>
+                        <div class="text-muted">Manages hospitals, doctors, user roles, resources, and views stock &amp; daily reports. (Cannot book emergencies or register patients).</div>
+                    </div>
+                    <div class="p-2 rounded bg-light border">
+                        <strong class="text-warning text-dark"><i class="bi bi-headset me-1"></i>Operator:</strong>
+                        <div class="text-muted">Handles incoming patient calls, registers new patients, executes 7-step IDSS routing, and books consultation appointments.</div>
+                    </div>
+                    <div class="p-2 rounded bg-light border">
+                        <strong class="text-success"><i class="bi bi-person-heart me-1"></i>Doctor:</strong>
+                        <div class="text-muted">Restricted portal displaying doctor's daily appointments, consultation notes, patient care history, and schedules.</div>
+                    </div>
+                    <div class="p-2 rounded bg-light border">
+                        <strong class="text-info"><i class="bi bi-person-badge me-1"></i>Patient:</strong>
+                        <div class="text-muted">Access to personal appointment schedule, hospital search, and doctor roster.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const roleRadios = document.querySelectorAll('.role-radio');
+    const doctorLinkContainer = document.getElementById('doctor_link_container');
+
+    roleRadios.forEach(function(radio) {
+        radio.addEventListener('change', function() {
+            if (this.value === 'doctor') {
+                doctorLinkContainer.style.display = 'block';
+            } else {
+                doctorLinkContainer.style.display = 'none';
+            }
+        });
+    });
+});
+</script>
+
+{% endblock %}

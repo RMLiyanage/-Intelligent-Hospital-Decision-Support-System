@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}About — MediRoute Healthcare Platform{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">About</li>{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title"><i class="bi bi-hospital-fill text-primary me-2"></i>About MediRoute Healthcare Platform</h1>
+        <p class="page-subtitle">Integrated Hospital Decision Support &amp; Emergency Management System</p>
+    </div>
+</div>
+
+<div class="card mr-card mb-4">
+    <div class="card-body p-4">
+        <h4 class="fw-bold text-primary mb-3">System Overview</h4>
+        <p class="lead text-dark fs-6 mb-4">
+            <strong>MediRoute Healthcare Platform</strong> is an enterprise emergency dispatch and hospital resource allocation system designed to streamline patient intake, specialist matching, bed management, and consultation scheduling across hospital networks.
+        </p>
+
+        <div class="row g-4 mb-4">
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded border h-100">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-geo-alt-fill text-danger me-2"></i>Smart Dispatch &amp; Routing</h5>
+                    <p class="small text-muted mb-0">
+                        Automatically identifies the closest suitable hospital branch based on patient location, specialty requirement, and live bed availability, calculating optimal travel routes and transport options.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded border h-100">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-heart-pulse-fill text-success me-2"></i>Resource Management</h5>
+                    <p class="small text-muted mb-0">
+                        Real-time tracking and pre-reservation of ICU beds, consultation rooms, emergency equipment, and specialized medical staff prior to patient arrival.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded border h-100">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-person-badge-fill text-primary me-2"></i>Doctor Consultation Portal</h5>
+                    <p class="small text-muted mb-0">
+                        Dedicated doctor dashboards allowing consultants to view assigned patient appointments, update medical notes, track room assignments, and manage patient care.
+                    </p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded border h-100">
+                    <h5 class="fw-bold text-dark mb-2"><i class="bi bi-shield-lock-fill text-purple me-2" style="color:#a855f7;"></i>Role-Based Security</h5>
+                    <p class="small text-muted mb-0">
+                        Multi-tier role-based access control protecting patient privacy and access for Administrators, Operators, Doctors, and Patients.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-success mt-4 mb-0">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong>System Operational Status:</strong> MediRoute Healthcare System Active — All hospital branches, doctor portals, and dispatch services operational.
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{% if mode=='add' %}Add Doctor{% else %}Edit Doctor{% endif %} — MediRoute DSS{% endblock %}
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('hospital.list_doctors') }}">Doctors</a></li>
+<li class="breadcrumb-item active">{% if mode=='add' %}Add{% else %}Edit{% endif %}</li>
+{% endblock %}
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-person-badge-fill me-2 {% if mode=='add' %}text-success{% else %}text-warning{% endif %}"></i>
+            {% if mode=='add' %}Add New Doctor{% else %}Edit Doctor — Dr. {{ d.name }}{% endif %}
+        </h1>
+    </div>
+</div>
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header {% if mode=='add' %}bg-success{% else %}bg-warning text-dark{% endif %} text-white">
+                <span class="fw-semibold">Doctor Details</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('hospital.add_doctor') if mode=='add' else url_for('hospital.edit_doctor', did=d.id) }}">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" value="{{ d.name if d else '' }}" placeholder="e.g. Dr. Silva" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Qualification / Title</label>
+                            <input type="text" class="form-control" name="qualification" value="{{ d.qualification if d else 'Consultant Cardiologist' }}" placeholder="e.g. Consultant Cardiologist">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Specialization</label>
+                            <select class="form-select" name="specialization">
+                                {% for s in specs %}
+                                <option value="{{ s }}" {% if d and d.specialization==s %}selected{% endif %}>{{ s }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Hospital</label>
+                            <select class="form-select" name="hospital_id" required>
+                                <option value="" disabled {% if not d %}selected{% endif %}>-- Select --</option>
+                                {% for h in hospitals %}
+                                <option value="{{ h.id }}" {% if d and d.hospital_id==h.id %}selected{% endif %}>{{ h.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Rating (0–5)</label>
+                            <input type="number" class="form-control" name="rating" value="{{ d.rating if d else 4.0 }}" min="0" max="5" step="0.1">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Experience (years)</label>
+                            <input type="number" class="form-control" name="experience_years" value="{{ d.experience_years if d else 5 }}" min="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Max Patients/Day</label>
+                            <input type="number" class="form-control" name="max_patients_per_day" value="{{ d.max_patients_per_day if d else 20 }}" min="1">
+                        </div>
+                    </div>
+                    <!-- Working Hours & Duration -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold"><i class="bi bi-clock me-1"></i>Start Time</label>
+                            <input type="time" class="form-control" name="working_start_time" value="{{ d.working_start_time|time_fmt('09:00') if d else '09:00' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold"><i class="bi bi-clock-history me-1"></i>End Time</label>
+                            <input type="time" class="form-control" name="working_end_time" value="{{ d.working_end_time|time_fmt('17:00') if d else '17:00' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Slot Duration (min)</label>
+                            <input type="number" class="form-control" name="consultation_duration_min" value="{{ d.consultation_duration_min if d else 30 }}" min="10" max="120">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Availability</label>
+                        <select class="form-select" name="availability_status">
+                            {% for av in ['available','busy','off_duty'] %}
+                            <option value="{{ av }}" {% if d and d.availability_status==av %}selected{% elif not d and av=='available' %}selected{% endif %}>{{ av|replace('_',' ')|title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn {% if mode=='add' %}btn-success{% else %}btn-warning{% endif %} fw-bold flex-grow-1">
+                            <i class="bi bi-check-circle-fill me-2"></i>{% if mode=='add' %}Add Doctor{% else %}Save Changes{% endif %}
+                        </button>
+                        <a href="{{ url_for('hospital.list_doctors') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

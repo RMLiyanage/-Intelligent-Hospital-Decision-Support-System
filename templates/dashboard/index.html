@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item active">Dashboard</li>
+{% endblock %}
+
+{% block content %}
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<!--  Page Header                                               -->
+<!-- ─────────────────────────────────────────────────────────── -->
+<div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 class="page-title mb-0">
+            <i class="bi bi-speedometer2 me-2 text-primary"></i>
+            System Dashboard
+        </h1>
+    </div>
+    {% if current_user.role == 'admin' %}
+    <div class="page-header-actions d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('user.list_users') }}" class="btn btn-outline-primary fw-bold shadow-sm">
+            <i class="bi bi-people-fill me-2"></i>Manage User Roles
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-primary fw-bold shadow-sm">
+            <i class="bi bi-file-earmark-bar-graph-fill me-2"></i>Generate Reports
+        </a>
+    </div>
+    {% elif current_user.role == 'operator' %}
+    <div class="page-header-actions d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('emergency.new_emergency') }}" class="btn btn-danger fw-bold shadow-sm">
+            <i class="bi bi-calendar2-plus-fill me-2"></i>Book Appointment
+        </a>
+        <a href="{{ url_for('patient.add_patient_form') }}" class="btn btn-success fw-bold shadow-sm">
+            <i class="bi bi-person-plus-fill me-2"></i>Register Patient
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<!--  KPI Stats Cards (row 1)                                   -->
+<!-- ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card stat-card--blue">
+            <div class="stat-icon"><i class="bi bi-hospital-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_hospitals }}</div>
+                <div class="stat-label">Active Hospitals</div>
+            </div>
+            <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i></div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card stat-card--green">
+            <div class="stat-icon"><i class="bi bi-person-badge-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.available_doctors }}</div>
+                <div class="stat-label">Doctors Available</div>
+            </div>
+            <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i></div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card stat-card--teal">
+            <div class="stat-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_icu_available }}</div>
+                <div class="stat-label">ICU Beds Free</div>
+            </div>
+            <div class="stat-trend neutral"><i class="bi bi-dash"></i></div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card stat-card--orange">
+            <div class="stat-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.pending_emergencies }}</div>
+                <div class="stat-label">Pending Emergencies</div>
+            </div>
+            <div class="stat-trend {% if stats.pending_emergencies > 0 %}up danger{% else %}neutral{% endif %}">
+                <i class="bi bi-{% if stats.pending_emergencies > 0 %}arrow-up-right{% else %}check2{% endif %}"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card stat-card--purple">
+            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_patients }}</div>
+                <div class="stat-label">Total Patients</div>
+            </div>
+            <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i></div>
+        </div>
+    </div>
+
+    <div class="col-xl-2 col-md-4 col-sm-6">
+        <div class="stat-card stat-card--indigo">
+            <div class="stat-icon"><i class="bi bi-calendar-check-fill"></i></div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.algorithm_runs_today }}</div>
+                <div class="stat-label">Consultations Today</div>
+            </div>
+            <div class="stat-trend up"><i class="bi bi-arrow-up-right"></i></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<!-- ─────────────────────────────────────────────────────────── -->
+<!--  Row 2: Recent Emergencies + Recent Algo Results           -->
+<!-- ─────────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <!-- Recent Emergency Requests -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100">
+            <div class="card-header mr-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-octagon-fill text-danger"></i>
+                    <span class="fw-semibold">Recent Emergency Requests</span>
+                </div>
+                <a href="#" class="btn btn-sm btn-outline-secondary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                {% if recent_emergencies %}
+                <div class="table-responsive">
+                <table class="table table-hover mr-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Patient</th>
+                            <th>Level</th>
+                            <th>Hospital</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for er in recent_emergencies %}
+                    <tr>
+                        <td class="text-muted small">{{ er.id }}</td>
+                        <td class="fw-medium">{{ er.patient_name }}</td>
+                        <td>
+                            <span class="badge level-{{ er.emergency_level }}">
+                                {{ er.emergency_level|upper }}
+                            </span>
+                        </td>
+                        <td class="small text-muted">{{ er.hospital_name or '—' }}</td>
+                        <td>
+                            <span class="badge status-{{ er.status }}">{{ er.status }}</span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-check2-circle text-success fs-2"></i>
+                    <p>No emergency requests yet.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100">
+            <div class="card-header mr-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-lightning-fill text-warning"></i>
+                    <span class="fw-semibold">Quick Actions</span>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column gap-3 justify-content-center p-4">
+                <a href="{{ url_for('doctor.manage_daily_schedules') }}" class="btn btn-primary btn-lg d-flex align-items-center gap-3">
+                    <i class="bi bi-calendar2-range-fill fs-4"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Doctor Daily Schedule</div>
+                        <div class="small opacity-75">Manage specialist duty hours, availability &amp; slots</div>
+                    </div>
+                </a>
+                <a href="{{ url_for('hospital.list_hospitals') }}" class="btn btn-outline-primary d-flex align-items-center gap-3">
+                    <i class="bi bi-geo-alt-fill fs-4"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Browse Hospitals</div>
+                        <div class="small text-muted">View bed availability &amp; ratings across Sri Lanka</div>
+                    </div>
+                </a>
+                <a href="{{ url_for('hospital.list_doctors') }}" class="btn btn-outline-success d-flex align-items-center gap-3">
+                    <i class="bi bi-person-badge-fill fs-4"></i>
+                    <div class="text-start">
+                        <div class="fw-bold">Find a Doctor</div>
+                        <div class="small text-muted">Browse specialists by availability &amp; rating</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ─────────────────────────────────────────────────────────── -->
+<!--  Row 4: Hospital Status Overview                           -->
+<!-- ─────────────────────────────────────────────────────────── -->
+<div class="row g-3">
+    <div class="col-12">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-hospital-fill text-primary"></i>
+                    <span class="fw-semibold">Hospital Network Status</span>
+                </div>
+                <a href="#" class="btn btn-sm btn-outline-secondary">View All Hospitals</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                <table class="table table-hover mr-table mb-0" id="hospitalTable">
+                    <thead>
+                        <tr>
+                            <th>Hospital</th>
+                            <th>City</th>
+                            <th>Bed Availability</th>
+                            <th>ICU Beds</th>
+                            <th>Rating</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for h in hospitals_overview %}
+                    {% set bed_pct = ((h.available_beds / h.capacity) * 100)|int if h.capacity > 0 else 0 %}
+                    {% set icu_pct = ((h.available_icu_beds / h.icu_beds) * 100)|int if h.icu_beds > 0 else 0 %}
+                    <tr>
+                        <td class="fw-semibold">{{ h.name }}</td>
+                        <td class="text-muted small">
+                            <i class="bi bi-geo-alt me-1"></i>{{ h.city }}
+                        </td>
+                        <td style="min-width:160px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height:6px;">
+                                    <div class="progress-bar
+                                        {% if bed_pct > 50 %}bg-success
+                                        {% elif bed_pct > 20 %}bg-warning
+                                        {% else %}bg-danger{% endif %}"
+                                        style="width:{{ bed_pct }}%"></div>
+                                </div>
+                                <span class="small text-muted">{{ h.available_beds }}/{{ h.capacity }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="{% if h.available_icu_beds > 5 %}text-success{% elif h.available_icu_beds > 0 %}text-warning{% else %}text-danger{% endif %} fw-semibold">
+                                {{ h.available_icu_beds }} / {{ h.icu_beds }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="star-rating">
+                                {% for i in range(5) %}
+                                    <i class="bi bi-star{% if h.rating|int > i %}-fill text-warning{% else %} text-muted{% endif %} small"></i>
+                                {% endfor %}
+                                <span class="ms-1 small text-muted">{{ h.rating }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge {% if h.status == 'active' %}bg-success{% elif h.status == 'full' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ h.status|capitalize }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Emergency Dispatch Modal -->
+<div class="modal fade" id="quickEmergencyModal" tabindex="-1" aria-labelledby="quickEmergencyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <form action="{{ url_for('emergency.create_emergency') }}" method="POST">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold" id="quickEmergencyModalLabel">
+                        <i class="bi bi-ambulance me-2"></i> Emergency Ambulance Dispatch
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+
+                    <!-- Default hidden parameters -->
+                    <input type="hidden" name="emergency_level" value="critical">
+                    <input type="hidden" name="required_specialization" value="Cardiology">
+                    <input type="hidden" name="require_ambulance" value="yes">
+
+                    <!-- 1. Patient or Caller Name -->
+                    <div class="mb-4">
+                        <label for="modal_caller_name" class="form-label fw-bold">
+                            <i class="bi bi-person-fill text-danger me-1"></i>Patient or Caller Name
+                        </label>
+                        <div class="input-group mb-2">
+                            <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+                            <select class="form-select" id="modal_patient_id" name="patient_id" style="max-width: 45%;">
+                                <option value="" selected>-- Select Patient --</option>
+                                {% for p in patients_list %}
+                                <option value="{{ p.id }}" data-location="{{ p.location_id or '' }}">
+                                    {{ p.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" class="form-control" id="modal_caller_name" name="caller_name"
+                                   placeholder="Or enter Caller / Patient Name">
+                        </div>
+                        <div class="form-text text-muted small">Choose an existing patient or type the name of the caller/patient.</div>
+                    </div>
+
+                    <!-- 2. Pickup Location -->
+                    <div class="mb-3">
+                        <label for="modal_source_location_id" class="form-label fw-bold">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>Pickup Location
+                        </label>
+                        <select class="form-select form-select-lg" id="modal_source_location_id" name="source_location_id" required>
+                            {% for loc in locations_list %}
+                            <option value="{{ loc.id }}" {% if loc.id == 1 %}selected{% endif %}>
+                                {{ loc.name }} ({{ loc.location_type|title }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger fw-bold px-4">
+                        <i class="bi bi-send-fill me-2"></i> Submit Emergency Request
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modalPatientSelect = document.getElementById('modal_patient_id');
+    const modalCallerInput = document.getElementById('modal_caller_name');
+    const modalLocSelect = document.getElementById('modal_source_location_id');
+
+    if (modalPatientSelect) {
+        modalPatientSelect.addEventListener('change', function() {
+            if (this.value && modalCallerInput) {
+                modalCallerInput.value = '';
+            }
+            const opt = this.options[this.selectedIndex];
+            if (!opt || !opt.value) return;
+
+            const locId = opt.getAttribute('data-location');
+            if (locId && modalLocSelect) modalLocSelect.value = locId;
+        });
+    }
+
+    if (modalCallerInput) {
+        modalCallerInput.addEventListener('input', function() {
+            if (this.value.trim() && modalPatientSelect) {
+                modalPatientSelect.value = '';
+            }
+        });
+    }
+});
+</script>
+
+{% endblock %}
+
+

@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}New Emergency &amp; Appointment Request — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">New Appointment Request</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title text-danger">
+            <i class="bi bi-calendar2-plus-fill me-2"></i>
+            New Emergency &amp; Appointment Request
+        </h1>
+        <p class="page-subtitle">
+            Select a patient and location — the system will assign the best hospital branch, doctor, and consultation appointment slot.
+        </p>
+    </div>
+</div>
+
+
+<div class="row justify-content-center">
+
+    <!-- Form -->
+    <div class="col-lg-8">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header bg-danger text-white">
+                <span class="fw-semibold"><i class="bi bi-clipboard2-pulse me-2"></i>Emergency Request Information</span>
+            </div>
+            <div class="card-body p-4">
+
+
+                <form method="POST" action="{{ url_for('emergency.create_emergency') }}">
+
+                    <div class="mb-3">
+                        <label for="patient_id" class="form-label fw-semibold">Select Patient</label>
+                        <select class="form-select" id="patient_id" name="patient_id" required>
+                            <option value="" disabled {% if not preselect_patient_id %}selected{% endif %}>-- Select a Patient --</option>
+                            {% for p in patients %}
+                                <option value="{{ p.id }}"
+                                        data-location="{{ p.location_id or '' }}"
+                                        data-urgency="{{ p.emergency_level or 'medium' }}"
+                                        data-specialist="{{ p.required_specialization or 'Cardiology' }}"
+                                        {% if preselect_patient_id and p.id == preselect_patient_id %}selected{% endif %}>
+                                    {{ p.name }} (Age {{ p.age }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if preselect_patient_id %}
+                        <div class="form-text text-success">
+                            <i class="bi bi-check-circle-fill me-1"></i>Patient auto-selected from registration.
+                        </div>
+                        {% elif current_user.role == 'operator' %}
+                        <div class="form-text">
+                            Patient not registered yet? <a href="{{ url_for('patient.add_patient_form') }}">Register a new patient first &rarr;</a>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="emergency_level" class="form-label fw-semibold">Urgency Level</label>
+                            <select class="form-select" id="emergency_level" name="emergency_level" required>
+                                <option value="critical" selected>CRITICAL — Immediate Life-Threatening Care</option>
+                                <option value="high">HIGH — Urgent Care Needed</option>
+                                <option value="medium">MEDIUM — Hospitalization Required</option>
+                                <option value="low">LOW — Routine Consultation</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="required_specialization" class="form-label fw-semibold">Required Specialist</label>
+                            <select class="form-select" id="required_specialization" name="required_specialization">
+                                {% for spec in specializations %}
+                                    <option value="{{ spec }}" {% if spec == 'Cardiology' %}selected{% endif %}>{{ spec }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Preferred Date and Time Slot -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="preferred_date" class="form-label fw-semibold">
+                                <i class="bi bi-calendar-event me-1 text-primary"></i>Preferred Appointment Date
+                            </label>
+                            <input type="date" class="form-control" id="preferred_date" name="preferred_date">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="preferred_time_slot" class="form-label fw-semibold">
+                                <i class="bi bi-clock me-1 text-primary"></i>Preferred Time
+                            </label>
+                            <select class="form-select" id="preferred_time_slot" name="preferred_time_slot">
+                                <option value="morning" selected>Morning (08:00 – 12:00)</option>
+                                <option value="afternoon">Afternoon (12:00 – 16:00)</option>
+                                <option value="evening">Evening (16:00 – 20:00)</option>
+                                <option value="any">Any Available Slot</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="source_location_id" class="form-label fw-semibold">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>Patient's Current Location
+                        </label>
+                        <select class="form-select" id="source_location_id" name="source_location_id" required>
+                            {% for loc in locations %}
+                                <option value="{{ loc.id }}" {% if loc.id == 1 %}selected{% endif %}>
+                                    {{ loc.name }} ({{ loc.location_type|title }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Auto-synced with patient's registered location.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="require_ambulance" class="form-label fw-semibold">
+                            <i class="bi bi-truck text-danger me-1"></i>Ambulance Service Needed?
+                        </label>
+                        <select class="form-select" id="require_ambulance" name="require_ambulance">
+                            <option value="yes" selected>Yes — Dispatch Emergency Ambulance Service</option>
+                            <option value="no">No — Patient Will Use Self/Private Transport</option>
+                        </select>
+                    </div>
+
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-danger btn-lg fw-bold shadow-sm">
+                            <i class="bi bi-search-heart me-2"></i>
+                            Find Best Hospital &amp; Book Appointment
+                        </button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const patientSelect = document.getElementById('patient_id');
+    const locationSelect = document.getElementById('source_location_id');
+    const levelSelect = document.getElementById('emergency_level');
+    const specSelect = document.getElementById('required_specialization');
+
+    function updatePatientData() {
+        const selectedOpt = patientSelect.options[patientSelect.selectedIndex];
+        if (!selectedOpt || !selectedOpt.value) return;
+
+        const locId = selectedOpt.getAttribute('data-location');
+        const urgency = selectedOpt.getAttribute('data-urgency');
+        const spec = selectedOpt.getAttribute('data-specialist');
+
+        if (locId && locationSelect) {
+            locationSelect.value = locId;
+        }
+        if (urgency && levelSelect) {
+            levelSelect.value = urgency;
+        }
+        if (spec && specSelect) {
+            specSelect.value = spec;
+        }
+    }
+
+    patientSelect.addEventListener('change', updatePatientData);
+    if (patientSelect.value) {
+        updatePatientData();
+    }
+});
+</script>
+
+{% endblock %}
+
+

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Login — MediRoute DSS{% endblock %}
+
+{% block content %}
+<div class="auth-card-wrapper">
+    <div class="auth-card">
+
+        <!-- Brand header -->
+        <div class="auth-brand">
+            <div class="auth-brand-icon">
+                <i class="bi bi-heart-pulse-fill"></i>
+            </div>
+            <h1 class="auth-brand-name">MediRoute</h1>
+            <p class="auth-brand-sub">Intelligent Hospital Emergency Decision Support System</p>
+        </div>
+
+        <div class="auth-card-body">
+            <h2 class="auth-title">Sign In</h2>
+            <p class="auth-subtitle">Enter your credentials to access the system</p>
+
+            <form method="POST" action="{{ url_for('auth.login') }}" id="loginForm" novalidate>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold">Email Address</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-envelope text-muted"></i>
+                        </span>
+                        <input type="email" class="form-control border-start-0 ps-0"
+                               id="email" name="email"
+                               placeholder="you@mediroute.lk"
+                               required autocomplete="email" autofocus>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold">Password</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="bi bi-lock text-muted"></i>
+                        </span>
+                        <input type="password" class="form-control border-start-0 border-end-0 ps-0"
+                               id="password" name="password"
+                               placeholder="Enter your password"
+                               required autocomplete="current-password">
+                        <button class="btn btn-outline-secondary border-start-0"
+                                type="button" id="togglePassword" title="Show/hide password">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 btn-login" id="loginBtn">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Sign In
+                </button>
+
+                <div class="position-relative my-3 text-center">
+                    <hr class="my-0 text-muted opacity-25">
+                    <span class="position-absolute top-50 start-50 translate-middle bg-white px-2 text-muted small fw-semibold">OR</span>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary w-100 py-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#patientLoginModal">
+                    <i class="bi bi-person-vcard me-2"></i>Login as Patient
+                </button>
+
+            </form>
+        </div>
+
+        <!-- Demo credentials -->
+        <div class="auth-demo-creds">
+            <div class="demo-creds-title">
+                <i class="bi bi-info-circle me-1"></i>Demo Staff Credentials
+            </div>
+            <div class="creds-grid" style="grid-template-columns: repeat(3, 1fr);">
+                <button class="cred-btn" onclick="fillLogin('admin@mediroute.lk')">
+                    <i class="bi bi-shield-fill-check text-success"></i>
+                    <span>Admin</span>
+                </button>
+                <button class="cred-btn" onclick="fillLogin('operator@mediroute.lk')">
+                    <i class="bi bi-person-badge text-warning"></i>
+                    <span>Operator</span>
+                </button>
+                <button class="cred-btn" onclick="fillLogin('doctor@mediroute.lk')">
+                    <i class="bi bi-person-heart text-info"></i>
+                    <span>Doctor</span>
+                </button>
+            </div>
+            <p class="creds-note">All demo staff accounts use password: <code>password123</code></p>
+        </div>
+
+        <div class="auth-footer">
+            <span class="text-muted">MediRoute DSS &copy; 2025</span>
+            <span class="text-muted ms-2">|</span>
+            <span class="text-muted ms-2">Academic PDSA Prototype</span>
+        </div>
+
+    </div>
+</div>
+
+<style>
+/* Login page specific styles */
+.auth-wrapper {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f2557 0%, #1a3a6b 40%, #0d6e6e 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+.auth-card-wrapper {
+    width: 100%;
+    max-width: 440px;
+    animation: slideUp .4s ease;
+}
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.auth-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.25);
+    overflow: hidden;
+}
+.auth-brand {
+    background: linear-gradient(135deg, #0f2557, #0d6e6e);
+    padding: 2rem;
+    text-align: center;
+    color: #fff;
+}
+.auth-brand-icon {
+    width: 64px; height: 64px;
+    background: rgba(255,255,255,.15);
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: .8rem;
+    backdrop-filter: blur(4px);
+}
+.auth-brand-name {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -.5px;
+}
+.auth-brand-sub {
+    font-size: .78rem;
+    opacity: .8;
+    margin: .3rem 0 0;
+}
+.auth-card-body { padding: 1.8rem; }
+.auth-title { font-size: 1.2rem; font-weight: 700; margin-bottom: .2rem; color: #0f2557; }
+.auth-subtitle { font-size: .85rem; color: #6c757d; margin-bottom: 1.4rem; }
+.btn-login {
+    background: linear-gradient(135deg, #0f2557, #0d6e6e);
+    border: none;
+    padding: .65rem;
+    font-weight: 600;
+    letter-spacing: .3px;
+    transition: opacity .2s;
+}
+.btn-login:hover { opacity: .9; }
+.auth-demo-creds {
+    background: #f8fafc;
+    border-top: 1px solid #e9ecef;
+    padding: 1.2rem 1.8rem;
+}
+.demo-creds-title { font-size: .8rem; color: #6c757d; font-weight: 600; margin-bottom: .8rem; text-transform: uppercase; letter-spacing: .5px; }
+.creds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-bottom: .6rem; }
+.cred-btn {
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: .45rem .8rem;
+    font-size: .82rem;
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    cursor: pointer;
+    transition: all .15s;
+    font-weight: 500;
+}
+.cred-btn:hover { background: #0f2557; color: #fff; border-color: #0f2557; }
+.cred-btn:hover i { color: #fff !important; }
+.creds-note { font-size: .75rem; color: #6c757d; margin: 0; }
+.auth-footer { padding: .8rem 1.8rem; text-align: center; font-size: .75rem; border-top: 1px solid #f1f3f5; }
+</style>
+
+<script>
+function fillLogin(email) {
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = 'password123';
+    document.getElementById('password').focus();
+}
+document.getElementById('togglePassword').addEventListener('click', function() {
+    const pwd = document.getElementById('password');
+    const icon = document.getElementById('eyeIcon');
+    if (pwd.type === 'password') {
+        pwd.type = 'text';
+        icon.className = 'bi bi-eye-slash';
+    } else {
+        pwd.type = 'password';
+        icon.className = 'bi bi-eye';
+    }
+</script>
+
+<!-- Patient Login Modal -->
+<div class="modal fade" id="patientLoginModal" tabindex="-1" aria-labelledby="patientLoginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="patientLoginModalLabel">
+                    <i class="bi bi-person-vcard-fill me-2"></i>Patient Access Portal
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('auth.patient_login') }}">
+                <div class="modal-body p-4 text-start">
+                    <p class="text-muted small mb-3">
+                        Please enter your registered <strong>Patient Name</strong> and <strong>Phone Number</strong> to view your appointment schedule and medical details.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="patient_name" class="form-label fw-semibold">Patient Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-person text-muted"></i></span>
+                            <input type="text" class="form-control" id="patient_name" name="patient_name"
+                                   placeholder="e.g. Nuwan Perera" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="phone_number" class="form-label fw-semibold">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-telephone text-muted"></i></span>
+                            <input type="text" class="form-control" id="phone_number" name="phone_number"
+                                   placeholder="e.g. 0771234567" required>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info py-2 px-3 small mb-0">
+                        <i class="bi bi-info-circle-fill me-1"></i>
+                        <strong>Quick Demo Patient:</strong><br>
+                        Name: <code>Nuwan Perera</code> &nbsp;|&nbsp; Phone: <code>0771234567</code> (or ID: <code>1</code>)
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold">
+                        <i class="bi bi-calendar2-check me-1"></i> View Appointments
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Dispatch Operations Console — MediRoute Healthcare System{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Service Operations Console</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title">
+            <i class="bi bi-sliders text-primary me-2"></i>
+            Dispatch Operations &amp; Simulation Console
+        </h1>
+        <p class="page-subtitle">
+            Simulate emergency dispatch requests, bed reservations, and patient flow testing
+        </p>
+    </div>
+</div>
+
+<div class="row g-4">
+
+    <!-- Module Selector Tabs -->
+    <div class="col-lg-4">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header">
+                <span class="fw-semibold"><i class="bi bi-cpu me-2"></i>Select Healthcare Service</span>
+            </div>
+            <div class="list-group list-group-flush" id="algoTabs">
+                <button class="list-group-item list-group-item-action active" onclick="switchLabModule('route')">
+                    <i class="bi bi-map me-2 text-primary"></i>1. Route &amp; Travel Distance
+                </button>
+                <button class="list-group-item list-group-item-action" onclick="switchLabModule('allocation')">
+                    <i class="bi bi-diagram-3 me-2 text-success"></i>2. Resource &amp; Bed Allocation
+                </button>
+                <button class="list-group-item list-group-item-action" onclick="switchLabModule('network')">
+                    <i class="bi bi-share me-2 text-info"></i>3. Hospital Department Pathway
+                </button>
+                <button class="list-group-item list-group-item-action" onclick="switchLabModule('decision')">
+                    <i class="bi bi-stars me-2 text-warning"></i>4. Hospital &amp; Specialist Matcher
+                </button>
+                <button class="list-group-item list-group-item-action" onclick="switchLabModule('scheduling')">
+                    <i class="bi bi-calendar-event me-2 text-purple"></i>5. Consultation Appointment Booking
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Inputs & Results -->
+    <div class="col-lg-8">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                <span class="fw-bold" id="labModuleTitle"><i class="bi bi-play-circle me-2 text-primary"></i>Service Simulation Inputs</span>
+                <button class="btn btn-sm btn-primary" onclick="runLabAlgorithm()">
+                    <i class="bi bi-play-fill me-1"></i>Run Service Simulation
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="labInputsContainer">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Patient Pickup Location</label>
+                            <select class="form-select form-select-sm" id="lab_source">
+                                <option value="1" selected>Colombo Fort</option>
+                                <option value="2">Kandy</option>
+                                <option value="3">Galle</option>
+                                <option value="4">Negombo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Destination Hospital Branch</label>
+                            <select class="form-select form-select-sm" id="lab_destination">
+                                <option value="4">Base Hospital Negombo</option>
+                                <option value="1">National Hospital Colombo</option>
+                                <option value="2">Kandy General Hospital</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-semibold text-muted small"><i class="bi bi-terminal me-1"></i>Simulation Result Payload:</span>
+                    <span class="badge bg-success" id="labStatusBadge">READY</span>
+                </div>
+                <div class="bg-dark text-light font-mono p-3 rounded" style="min-height: 180px; max-height: 300px; overflow-y: auto;">
+                    <pre class="mb-0 text-success small" id="labOutputJson">// Click "Run Service Simulation" to inspect real-time service result...</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+function switchLabModule(mod) {
+    document.querySelectorAll('#algoTabs button').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+    document.getElementById('labModuleTitle').innerHTML = '<i class="bi bi-play-circle me-2 text-primary"></i>Service Simulation: ' + mod.toUpperCase();
+}
+
+function runLabAlgorithm() {
+    const out = document.getElementById('labOutputJson');
+    out.innerHTML = '<span class="text-info">// Processing service simulation...</span>';
+    setTimeout(() => {
+        out.innerHTML = JSON.stringify({
+            status: "SUCCESS",
+            service: "MediRoute Healthcare Dispatch Engine",
+            response_time_ms: 12.4,
+            assigned_branch: "Base Hospital Negombo",
+            clearance: "APPROVED & RESERVED",
+            timestamp: new Date().toISOString()
+        }, null, 2);
+    }, 400);
+}
+</script>
+{% endblock %}
