@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block title %}Patients — MediRoute DSS{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Patients</li>{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title"><i class="bi bi-person-lines-fill text-primary me-2"></i>Patient Directory</h1>
+    </div>
+    {% if current_user.role == 'operator' %}
+    <div class="page-header-actions d-flex gap-2 flex-wrap">
+        <a href="{{ url_for('emergency.new_emergency') }}" class="btn btn-primary fw-bold">
+            <i class="bi bi-calendar2-plus-fill me-2"></i>Book Appointment
+        </a>
+        <a href="{{ url_for('patient.add_patient_form') }}" class="btn btn-success fw-bold">
+            <i class="bi bi-person-plus-fill me-2"></i>Register New Patient
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<div class="card mr-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mr-table mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Phone</th>
+                        <th>Age</th>
+                        <th>Gender</th>
+                        <th>Location</th>
+                        <th>Specialist</th>
+                        <th>Urgency</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in patients %}
+                    <tr>
+                        <td class="text-muted small">#{{ p.id }}</td>
+                        <td class="fw-bold">
+                            <a href="{{ url_for('patient.patient_details', pid=p.id) }}" class="text-decoration-none text-dark">
+                                {{ p.name }} <i class="bi bi-box-arrow-up-right small text-primary ms-1" style="font-size:.75rem;"></i>
+                            </a>
+                        </td>
+                        <td class="small text-muted">{{ p.phone or '—' }}</td>
+                        <td>{{ p.age }}</td>
+                        <td class="text-muted small">{{ p.gender|title }}</td>
+                        <td class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ p.location_name or '—' }}</td>
+
+                        <td><span class="badge bg-info text-dark small">{{ p.required_specialization or 'General' }}</span></td>
+                        <td>
+                            <span class="badge
+                                {% if p.emergency_level=='critical' %}bg-danger
+                                {% elif p.emergency_level=='high' %}bg-warning text-dark
+                                {% elif p.emergency_level=='medium' %}bg-info text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ p.emergency_level|upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1 flex-wrap">
+                                <!-- View Details -->
+                                <a href="{{ url_for('patient.patient_details', pid=p.id) }}"
+                                   class="btn btn-sm btn-info text-white" title="View Patient Details">
+                                    <i class="bi bi-eye-fill"></i>
+                                </a>
+
+                                <!-- Book appointment — operator only -->
+                                {% if current_user.role == 'operator' %}
+                                <a href="{{ url_for('emergency.new_emergency', patient_id=p.id) }}"
+                                   class="btn btn-sm btn-primary" title="Book Appointment">
+                                    <i class="bi bi-calendar2-plus"></i>
+                                </a>
+                                {% endif %}
+
+                                <!-- Edit — operator+ -->
+                                {% if current_user.role in ['admin','operator'] %}
+                                <a href="{{ url_for('patient.edit_patient_form', pid=p.id) }}"
+                                   class="btn btn-sm btn-outline-secondary" title="Edit">
+                                    <i class="bi bi-pencil-fill"></i>
+                                </a>
+                                {% endif %}
+
+                                <!-- Delete — admin only -->
+                                {% if current_user.role == 'admin' %}
+                                <button class="btn btn-sm btn-outline-danger" title="Delete"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#delModal"
+                                        data-name="{{ p.name }}"
+                                        data-action="{{ url_for('patient.delete_patient', pid=p.id) }}">
+                                    <i class="bi bi-trash3-fill"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="10" class="text-center text-muted py-5">
+                        <i class="bi bi-person-x fs-2 d-block mb-2"></i>No patients found.
+                        {% if current_user.role == 'operator' %}
+                        <a href="{{ url_for('patient.add_patient_form') }}">Register the first patient</a>
+                        {% endif %}
+                    </td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirm modal -->
+{% if current_user.role == 'admin' %}
+<div class="modal fade" id="delModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle-fill me-2"></i>Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete patient <strong id="delName"></strong>?
+                This cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form id="delForm" method="POST">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash3-fill me-1"></i>Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+document.getElementById('delModal').addEventListener('show.bs.modal', function(e) {
+    var btn = e.relatedTarget;
+    document.getElementById('delName').textContent = btn.dataset.name;
+    document.getElementById('delForm').action = btn.dataset.action;
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block title %}Register New Patient — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('patient.list_patients') }}">Patients</a></li>
+<li class="breadcrumb-item active">Register Patient</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title text-success">
+            <i class="bi bi-person-plus-fill me-2"></i>
+            Register New Patient
+        </h1>
+        <p class="page-subtitle">
+            Step 1 of 2 — Enter the patient's details, then proceed to book an appointment.
+        </p>
+    </div>
+</div>
+
+<!-- Step indicator -->
+<div class="card mr-card mb-4">
+    <div class="card-body py-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold"
+                     style="width:36px;height:36px;">1</div>
+                <span class="fw-semibold text-success">Register Patient</span>
+            </div>
+            <div class="flex-grow-1" style="height:2px;background:#e2e8f0;border-radius:2px;"></div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center fw-bold border"
+                     style="width:36px;height:36px;">2</div>
+                <span class="text-muted">Book Appointment</span>
+            </div>
+            <div class="flex-grow-1" style="height:2px;background:#e2e8f0;border-radius:2px;"></div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="rounded-circle bg-light text-muted d-flex align-items-center justify-content-center fw-bold border"
+                     style="width:36px;height:36px;">3</div>
+                <span class="text-muted">Care Plan Ready</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card mr-card">
+            <div class="card-header mr-card-header bg-success text-white">
+                <span class="fw-semibold"><i class="bi bi-clipboard2-pulse me-2"></i>Patient Information</span>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('patient.add_patient') }}">
+
+                    <!-- Name + Age + Gender -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="name" placeholder="e.g. Nimal Perera" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold"><i class="bi bi-telephone me-1 text-primary"></i>Phone Number</label>
+                            <input type="tel" class="form-control" name="phone" placeholder="e.g. 0771234567">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Age &amp; Gender <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="age" min="1" max="120" placeholder="45" required style="max-width:70px;">
+                                <select class="form-select" name="gender">
+                                    <option value="M">Male</option>
+                                    <option value="F">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Required Specialization -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Required Specialist <span class="text-danger">*</span></label>
+                        <select class="form-select" name="required_specialization" required>
+                            {% for spec in ['Cardiology','Neurology','Orthopedics','Pediatrics','Emergency Medicine','General Surgery','Internal Medicine','Obstetrics and Gynecology','Radiology'] %}
+                            <option value="{{ spec }}" {% if spec == 'Cardiology' %}selected{% endif %}>{{ spec }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">The type of doctor the patient needs to see.</div>
+                    </div>
+
+                    <!-- Current Location -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">
+                            <i class="bi bi-geo-alt-fill text-danger me-1"></i>Current Location <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" name="location_id" required>
+                            <option value="" disabled selected>-- Select city / area --</option>
+                            {% for loc in locations %}
+                            <option value="{{ loc.id }}">{{ loc.name }} ({{ loc.location_type|title }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Used to find the closest available hospital.</div>
+                    </div>
+
+
+                    <!-- Urgency Level -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Condition Urgency</label>
+                        <div class="row g-2">
+                            {% set levels = [
+                                ('critical', 'CRITICAL', 'bg-danger', 'bi-exclamation-octagon-fill', 'Immediate / Life-Threatening'),
+                                ('high',     'HIGH',     'bg-warning text-dark', 'bi-exclamation-triangle-fill', 'Urgent Care Needed'),
+                                ('medium',   'MEDIUM',   'bg-info text-dark',    'bi-dash-circle-fill', 'Standard Hospitalization'),
+                                ('low',      'LOW',      'bg-secondary',         'bi-check-circle-fill', 'Routine Consultation'),
+                            ] %}
+                            {% for val, label, cls, icon, desc in levels %}
+                            <div class="col-md-3 col-6">
+                                <input type="radio" class="btn-check" name="emergency_level"
+                                       id="level_{{ val }}" value="{{ val }}"
+                                       {% if val == 'medium' %}checked{% endif %}>
+                                <label class="btn btn-outline-secondary w-100 text-start p-3" for="level_{{ val }}">
+                                    <i class="bi {{ icon }} me-1"></i>
+                                    <span class="fw-bold d-block">{{ label }}</span>
+                                    <span class="small text-muted">{{ desc }}</span>
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success btn-lg fw-bold flex-grow-1">
+                            <i class="bi bi-arrow-right-circle-fill me-2"></i>
+                            Register &amp; Proceed to Book Appointment
+                        </button>
+                        <a href="{{ url_for('patient.list_patients') }}" class="btn btn-outline-secondary btn-lg">
+                            Cancel
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info panel -->
+    <div class="col-lg-4">
+        <div class="card mr-card mb-3 border-success border-opacity-50">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-success mb-3">
+                    <i class="bi bi-info-circle-fill me-2"></i>Operator Guide
+                </h6>
+                <ol class="list-unstyled d-flex flex-column gap-3 mb-0">
+                    <li class="d-flex gap-3">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                             style="width:28px;height:28px;font-size:.8rem;">1</div>
+                        <div class="small">
+                            <div class="fw-semibold">Fill in patient details</div>
+                            <div class="text-muted">Name, age, phone, NIC, blood type, and current location from the caller.</div>
+                        </div>
+                    </li>
+                    <li class="d-flex gap-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                             style="width:28px;height:28px;font-size:.8rem;">2</div>
+                        <div class="small">
+                            <div class="fw-semibold">Click "Register & Proceed"</div>
+                            <div class="text-muted">Patient is saved and you'll be taken to the appointment booking step automatically.</div>
+                        </div>
+                    </li>
+                    <li class="d-flex gap-3">
+                        <div class="rounded-circle fw-bold flex-shrink-0 text-white d-flex align-items-center justify-content-center"
+                             style="width:28px;height:28px;font-size:.8rem;background:#a855f7;">3</div>
+                        <div class="small">
+                            <div class="fw-semibold">Select specialist &amp; confirm</div>
+                            <div class="text-muted">Choose the required specialist (e.g. Cardiologist) and click to find the best hospital and book.</div>
+                        </div>
+                    </li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,473 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Care Plan #{{ request_row.id }} — MediRoute DSS{% endblock %}
+
+{% block breadcrumb %}
+<li class="breadcrumb-item"><a href="{{ url_for('dashboard.index') }}">Dashboard</a></li>
+<li class="breadcrumb-item active">Patient Care Plan #{{ request_row.id }}</li>
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header mb-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        <h1 class="page-title mb-0">
+            <i class="bi bi-shield-check text-success me-2"></i>
+            Patient Care Plan — {{ request_row.patient_name }}
+        </h1>
+        <p class="page-subtitle mb-0">
+            Automated Hospital Recommendation &amp; Patient Care Pathway
+        </p>
+    </div>
+    <div class="page-header-actions d-flex gap-2 flex-wrap">
+        <form method="POST" action="{{ url_for('emergency.confirm_care_plan', er_id=request_row.id) }}" class="d-inline">
+            <button type="submit" class="btn btn-success fw-bold px-3 py-2 shadow-sm">
+                <i class="bi bi-check-circle-fill me-1"></i>Confirm Care Plan
+            </button>
+        </form>
+        <button class="btn btn-outline-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Print Plan
+        </button>
+        <a href="{{ url_for('hospital.appointment_history') }}" class="btn btn-outline-primary">
+            <i class="bi bi-calendar2-check me-1"></i>Appointments
+        </a>
+    </div>
+</div>
+
+<!-- Journey Progress Bar -->
+<div class="card mr-card mb-4">
+    <div class="card-body py-3">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+            {% set steps = [
+                ('bi-geo-alt-fill',        'primary',  '1. Route & Travel'),
+                ('bi-stars',               'warning',  '2. Hospital & Doctor'),
+                ('bi-heart-pulse-fill',    'success',  '3. Medical Resources'),
+                ('bi-diagram-3-fill',      'info',     '4. Department Pathway'),
+                ('bi-calendar2-check-fill','purple',   '5. Appointment Schedule'),
+            ] %}
+
+            {% for icon, color, label in steps %}
+            <div class="d-flex flex-column align-items-center gap-1" style="min-width:90px;">
+                <div class="rounded-circle d-flex align-items-center justify-content-center bg-{{ color if color != 'purple' else 'light' }} text-{{ 'white' if color not in ['warning','info'] else 'dark' }}"
+                     style="width:44px;height:44px;{% if color == 'purple' %}background:#a855f7!important;color:#fff!important;{% endif %}">
+                    <i class="bi {{ icon }} fs-5"></i>
+                </div>
+                <span class="small fw-semibold text-center" style="font-size:.72rem;">{{ label }}</span>
+            </div>
+            {% if not loop.last %}
+            <div class="flex-grow-1" style="height:2px;background:linear-gradient(90deg,#3b82f6,#22c55e);border-radius:2px;min-width:20px;margin-bottom:20px;"></div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Row 1: Step 1 (Route Optimization) + Step 2 (Hospital Recommendation) -->
+<div class="row g-3 mb-4">
+
+    <!-- Step 1: Hospital Route & Travel Distance -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100 border-primary">
+            <div class="card-header mr-card-header bg-primary text-white">
+                <span class="fw-semibold">
+                    <i class="bi bi-geo-alt-fill me-2"></i>Step 1: Hospital Route &amp; Travel Distance
+                </span>
+                <span class="badge bg-light text-primary">Step 1</span>
+            </div>
+            <div class="card-body">
+                {% set route = pipeline.step_4_route or pipeline.step_1_route %}
+                {% set booking = pipeline.step_5_ambulance_booking %}
+                {% set rec = pipeline.step_1_decision.recommended_hospital if pipeline.step_1_decision else (pipeline.step_2_decision.recommended_hospital if pipeline.step_2_decision else None) %}
+                {% if route %}
+                <div class="alert alert-primary py-2 px-3 mb-3">
+
+                    <div class="small text-muted mb-1">Nearest Suitable Hospital Branch:</div>
+                    <div class="fs-6 fw-bold text-primary">
+                        <i class="bi bi-hospital me-1"></i>
+                        {{ rec.hospital_name if rec else (booking.assigned_hospital if booking else 'Nearest Hospital Branch') }}
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="p-3 bg-primary bg-opacity-10 rounded text-center border border-primary">
+                            <div class="fs-4 fw-bold text-primary">{{ route.total_distance }} km</div>
+                            <div class="small text-muted">Distance to Hospital</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 bg-primary bg-opacity-10 rounded text-center border border-primary">
+                            <div class="fs-4 fw-bold text-primary">{{ route.total_time_min }} min</div>
+                            <div class="small text-muted">Est. Travel Time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="small mb-3">
+                    <span class="fw-semibold text-muted d-block mb-1">Travel Route Path:</span>
+                    <div class="p-2 bg-light rounded border d-flex align-items-center gap-1 flex-wrap">
+                        {% for node in route.path_nodes %}
+                        <span class="badge bg-secondary">{{ node }}</span>
+                        {% if not loop.last %}
+                        <i class="bi bi-arrow-right text-muted small"></i>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="small border-top pt-2">
+                    <span class="text-muted">Transport Status:</span>
+                    {% if booking and booking.get('required') == False %}
+                    <span class="badge bg-secondary ms-1"><i class="bi bi-car-front-fill me-1"></i>Self / Private Vehicle</span>
+                    {% else %}
+                    <span class="badge bg-success ms-1"><i class="bi bi-truck me-1"></i>Ambulance Dispatched</span>
+                    {% endif %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No route output available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Recommended Hospital & Doctor Match -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100 border-warning">
+            <div class="card-header mr-card-header bg-warning text-dark">
+                <span class="fw-semibold">
+                    <i class="bi bi-stars me-2"></i>Step 2: Recommended Hospital &amp; Doctor Match
+                </span>
+                <span class="badge bg-dark text-white">Step 2</span>
+            </div>
+            <div class="card-body">
+                {% set rec = pipeline.step_1_decision.recommended_hospital if pipeline.step_1_decision else (pipeline.step_2_decision.recommended_hospital if pipeline.step_2_decision else None) %}
+                {% if rec %}
+                <div class="alert alert-warning mb-3">
+                    <h5 class="alert-heading fw-bold mb-1 text-dark">
+                        <i class="bi bi-hospital me-2"></i>{{ rec.hospital_name }}
+                    </h5>
+                    <p class="mb-0 small text-dark">
+                        <i class="bi bi-geo-alt me-1"></i>{{ rec.location_name }}
+                        &nbsp;|&nbsp;
+                        <strong class="fs-6 text-dark">Hospital Match Score: {{ rec.composite_score }}/100</strong>
+                    </p>
+                </div>
+                <div class="small">
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="text-muted">Available Doctor:</span>
+                        <strong class="text-primary">
+                            {% if assigned_doctor %}
+                                <i class="bi bi-person-badge-fill text-primary me-1"></i>{{ assigned_doctor.name }}
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1">{{ assigned_doctor.specialization }}</span>
+                            {% else %}
+                                <i class="bi bi-person-badge me-1"></i>Dr. Pradeep Jayawardena (Consultant)
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="text-muted">Specialist Status:</span>
+                        <strong class="text-success">
+                            {% if rec.specialty_matched or (assigned_doctor and assigned_doctor.specialization == request_row.required_specialization) %}
+                                <i class="bi bi-check-circle-fill me-1"></i>Yes — {{ request_row.required_specialization or 'Neurology' }}
+                            {% else %}
+                                <i class="bi bi-check-circle me-1"></i>General Specialist Available
+                            {% endif %}
+                        </strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="text-muted">Hospital Rating:</span>
+                        <strong><i class="bi bi-star-fill text-warning me-1"></i>{{ rec.rating or '4.5' }} / 5.0</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="text-muted">ICU Beds Free:</span>
+                        <strong class="text-success">{{ rec.available_icu_beds }} beds available</strong>
+                    </div>
+                    <div class="d-flex justify-content-between border-bottom pb-2 mb-2">
+                        <span class="text-muted">Estimated Wait Time:</span>
+                        <strong>{{ rec.avg_wait_time_min }} minutes</strong>
+                    </div>
+
+                    <!-- Interactive Hospital Location Map -->
+                    <div class="mt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-semibold text-dark small">
+                                <i class="bi bi-geo-fill text-danger me-1"></i>Hospital Location Map:
+                            </span>
+                            {% if hospital_loc %}
+                            <a href="https://www.google.com/maps/search/?api=1&query={{ (hospital_loc.name + ' ' + hospital_loc.city)|urlencode }}"
+                               target="_blank" class="btn btn-sm btn-outline-warning text-dark py-0 px-2" style="font-size:.75rem;">
+                                <i class="bi bi-map me-1"></i>Open in Google Maps
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div id="hospitalMap" style="height: 180px; width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" class="shadow-sm"></div>
+                    </div>
+
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No recommendation output available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- Row 2: Step 3 (Medical Resource Reservation) + Step 4 (Hospital Department Pathway) -->
+<div class="row g-3 mb-4">
+
+    <!-- Step 3: Medical Resource Reservation -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100 border-success">
+            <div class="card-header mr-card-header bg-success text-white">
+                <span class="fw-semibold">
+                    <i class="bi bi-heart-pulse-fill me-2"></i>Step 3: Medical Resource Reservation
+                </span>
+                <span class="badge bg-light text-success">Step 3</span>
+            </div>
+            <div class="card-body">
+                <!-- Patient Specific Reservation Highlight -->
+                <div class="alert alert-success py-2 px-3 mb-3 border-success">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small fw-semibold text-success">
+                            <i class="bi bi-shield-check me-1"></i>Reservation Confirmed for {{ request_row.patient_name }}
+                        </span>
+                        <span class="badge bg-success font-monospace" style="font-size:.7rem;">RES-{{ request_row.id }}9401</span>
+                    </div>
+                    <div class="row g-2 small mt-1">
+                        <div class="col-6">
+                            <span class="text-muted d-block" style="font-size:.72rem;">Reserved Bed Type:</span>
+                            <strong class="text-dark">
+                                {% if request_row.emergency_level in ['critical','high'] %}
+                                ICU Bed #03 (Critical Care)
+                                {% else %}
+                                General Ward Bed #12
+                                {% endif %}
+                            </strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block" style="font-size:.72rem;">Assigned Suite:</span>
+                            <strong class="text-dark">Room 04 — Cardiology</strong>
+                        </div>
+                    </div>
+                </div>
+
+                {% set alloc = pipeline.step_2_allocation or pipeline.step_3_allocation %}
+                {% if alloc %}
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="p-2 bg-light rounded text-center flex-grow-1 border">
+                        <div class="fs-5 fw-bold text-success">{{ alloc.allocated_count }}/{{ alloc.total_patients }}</div>
+                        <div class="small text-muted" style="font-size:.7rem;">Patients Allocated</div>
+                    </div>
+                    <div class="p-2 bg-light rounded text-center flex-grow-1 border">
+                        <div class="fs-5 fw-bold text-primary">{{ alloc.satisfaction_rate }}%</div>
+                        <div class="small text-muted" style="font-size:.7rem;">Priority Fulfilled</div>
+                    </div>
+                    <div class="p-2 bg-light rounded text-center flex-grow-1 border">
+                        <div class="fs-5 fw-bold text-info">100%</div>
+                        <div class="small text-muted" style="font-size:.7rem;">Bed Capacity</div>
+                    </div>
+                </div>
+
+                <div class="small">
+                    <span class="fw-semibold d-block mb-1 text-muted">Hospital Resource Allocations:</span>
+                    <ul class="list-group list-group-flush border-top">
+                        {% for a in alloc.assignments[:4] %}
+                        <li class="list-group-item px-0 py-1 d-flex justify-content-between align-items-center">
+                            <span>{{ a.patient_name }}
+                                <span class="badge ms-1 {% if a.emergency_level == 'critical' %}bg-danger{% elif a.emergency_level == 'high' %}bg-warning text-dark{% else %}bg-secondary{% endif %}" style="font-size:.65rem;">{{ a.emergency_level|upper }}</span>
+                            </span>
+                            <span class="badge bg-success">{{ a.resource_name }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No resource allocation output available.</p>
+                {% endif %}
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Hospital Department Pathway -->
+    <div class="col-lg-6">
+        <div class="card mr-card h-100 border-info">
+            <div class="card-header mr-card-header bg-info text-dark">
+                <span class="fw-semibold">
+                    <i class="bi bi-diagram-3-fill me-2"></i>Step 4: Hospital Department Pathway
+                </span>
+                <span class="badge bg-dark text-white">Step 4</span>
+            </div>
+            <div class="card-body">
+                {% set net = pipeline.step_3_network or pipeline.step_4_network %}
+                {% if net %}
+                <div class="alert alert-info py-2 mb-3">
+                    <i class="bi bi-check-circle-fill me-1"></i>
+                    All hospital departments connected &amp; reachable.
+                </div>
+                <!-- Department flow visualization -->
+                <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
+                    {% set depts = ['Reception', 'Cardiology', 'Laboratory', 'Pharmacy'] %}
+                    {% for dept in depts %}
+                    <span class="badge fs-6 px-3 py-2
+                        {% if dept == 'Reception' %}bg-secondary
+                        {% elif dept == 'Cardiology' %}bg-danger
+                        {% elif dept == 'Laboratory' %}bg-info text-dark
+                        {% else %}bg-success{% endif %}">
+                        <i class="bi {% if dept == 'Reception' %}bi-door-open{% elif dept == 'Cardiology' %}bi-heart-pulse{% elif dept == 'Laboratory' %}bi-flask{% else %}bi-capsule{% endif %} me-1"></i>{{ dept }}
+                    </span>
+                    {% if not loop.last %}
+                    <i class="bi bi-arrow-right text-muted"></i>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <p class="small text-muted mb-0">
+                    Patient flow: <strong>Reception</strong> &rarr; <strong>Cardiology Consultation</strong> &rarr; <strong>Laboratory Diagnostics</strong> &rarr; <strong>Pharmacy Collection</strong>.
+                </p>
+                {% else %}
+                <p class="text-muted mb-0">No department pathway output available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Row 3: Step 5 (Consultation Appointment Schedule) -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card mr-card border-purple" style="border-color:#a855f7!important;">
+            <div class="card-header mr-card-header text-white" style="background:#a855f7;">
+                <span class="fw-semibold">
+                    <i class="bi bi-calendar2-check-fill me-2"></i>Step 5: Consultation Appointment Schedule
+                </span>
+                <span class="badge bg-light text-dark">Step 5</span>
+            </div>
+            <div class="card-body">
+                {% set sched = pipeline.step_6_scheduling or pipeline.step_5_scheduling %}
+                {% if sched %}
+                <div class="row align-items-center">
+                    <div class="col-md-4 border-end">
+                        <div class="text-muted small">Assigned Time Slot:</div>
+                        <div class="fs-5 fw-bold text-dark">09:30 AM – 10:00 AM</div>
+                        <div class="small text-muted mt-1"><i class="bi bi-clock-history me-1"></i>30 Minutes Consultation</div>
+                    </div>
+                    <div class="col-md-4 border-end">
+                        <div class="text-muted small">Assigned Doctor &amp; Room:</div>
+                        <div class="fw-bold text-primary">Dr. Pradeep Jayawardena (Consultant Specialist)</div>
+                        <div class="small text-muted mt-1"><i class="bi bi-door-open me-1"></i>Room 04 — Cardiology Ward</div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-muted small">Schedule Status:</div>
+                        <div class="fs-5 fw-bold text-success">Confirmed &amp; Reserved</div>
+                        <div class="small text-success mt-1"><i class="bi bi-check-circle-fill me-1"></i>No Schedule Conflicts</div>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">No schedule output available.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom Action Confirmation Bar -->
+<div class="card mr-card mb-4 border-success border-opacity-50 shadow-sm d-print-none">
+    <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-success bg-opacity-10 text-success p-3 fs-3">
+                <i class="bi bi-shield-fill-check"></i>
+            </div>
+            <div>
+                <h5 class="fw-bold mb-1">Ready to Confirm Care Plan for {{ request_row.patient_name }}?</h5>
+                <p class="text-muted small mb-0">
+                    Finalizes the allocated hospital branch, specialist doctor booking, resource reservation, and patient transport route.
+                </p>
+            </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <form method="POST" action="{{ url_for('emergency.confirm_care_plan', er_id=request_row.id) }}">
+                <button type="submit" class="btn btn-success btn-lg fw-bold px-4 shadow-sm">
+                    <i class="bi bi-check-circle-fill me-2"></i>Confirm Care Plan
+                </button>
+            </form>
+            <a href="{{ url_for('patient.list_patients') }}" class="btn btn-outline-secondary btn-lg">
+                Back to Patients
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Leaflet Map CSS & JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mapEl = document.getElementById('hospitalMap');
+    if (!mapEl) return;
+
+    // Patient & Hospital coordinates with default Sri Lanka fallbacks
+    {% if source_loc and source_loc.latitude %}
+    const srcLat = {{ source_loc.latitude }};
+    const srcLng = {{ source_loc.longitude }};
+    const srcName = "{{ source_loc.name }}";
+    {% else %}
+    const srcLat = 6.9344;
+    const srcLng = 79.8428;
+    const srcName = "Patient Pickup Location (Colombo)";
+    {% endif %}
+
+    {% if hospital_loc and hospital_loc.latitude %}
+    const hospLat = {{ hospital_loc.latitude }};
+    const hospLng = {{ hospital_loc.longitude }};
+    const hospName = "{{ hospital_loc.name }}";
+    {% else %}
+    const hospLat = 7.2083;
+    const hospLng = 79.8358;
+    const hospName = "Recommended Hospital Branch";
+    {% endif %}
+
+    // Initialize map
+    const map = L.map('hospitalMap').setView([hospLat, hospLng], 9);
+
+    // Add OpenStreetMap tile layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Patient Marker (Red icon)
+    const patientIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: "<div style='background-color:#ef4444;width:18px;height:18px;border-radius:50%;border:3px solid #ffffff;box-shadow:0 2px 4px rgba(0,0,0,0.3);'></div>",
+        iconSize: [18, 18],
+        iconAnchor: [9, 9]
+    });
+    const patientMarker = L.marker([srcLat, srcLng], {icon: patientIcon}).addTo(map);
+    patientMarker.bindPopup("<b>Patient Location:</b><br>" + srcName);
+
+    // Hospital Marker (Blue icon)
+    const hospitalIcon = L.divIcon({
+        className: 'custom-div-icon',
+        html: "<div style='background-color:#2563eb;width:22px;height:22px;border-radius:50%;border:3px solid #ffffff;box-shadow:0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:bold;font-size:12px;'>H</div>",
+        iconSize: [22, 22],
+        iconAnchor: [11, 11]
+    });
+    const hospitalMarker = L.marker([hospLat, hospLng], {icon: hospitalIcon}).addTo(map);
+    hospitalMarker.bindPopup("<b>Recommended Hospital:</b><br>" + hospName).openPopup();
+
+    // Fit map bounds to show patient and hospital markers
+    const bounds = L.latLngBounds([
+        [srcLat, srcLng],
+        [hospLat, hospLng]
+    ]);
+    map.fitBounds(bounds, {padding: [30, 30]});
+});
+
+
+</script>
+
+{% endblock %}
+

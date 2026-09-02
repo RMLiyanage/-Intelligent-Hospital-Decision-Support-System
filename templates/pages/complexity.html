@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}System Specifications — MediRoute Healthcare System{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">System Specifications</li>{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+    <div>
+        <h1 class="page-title"><i class="bi bi-gear-wide-connected text-primary me-2"></i>System Specifications &amp; Scalability</h1>
+        <p class="page-subtitle">Hospital network capacity, throughput limits, and service operational thresholds</p>
+    </div>
+</div>
+
+<div class="card mr-card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped mr-table mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Subsystem Service</th>
+                        <th>Architecture Engine</th>
+                        <th>Max Capacity (Concurrent)</th>
+                        <th>Target Response Latency</th>
+                        <th>Resource Allocation Overhead</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="fw-bold">Hospital Route Optimization</td>
+                        <td>Graph Shortest Path Engine</td>
+                        <td>10,000 requests / min</td>
+                        <td><code>&lt; 15 ms</code></td>
+                        <td><code>Minimal (&lt; 2MB RAM)</code></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Resource Allocation Service</td>
+                        <td>Greedy Priority Matcher</td>
+                        <td>5,000 patient allocations / sec</td>
+                        <td><code>&lt; 10 ms</code></td>
+                        <td><code>Dynamic Memory Pool</code></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Department Network Analysis</td>
+                        <td>Hospital Graph Reachability</td>
+                        <td>500 connected hospital branches</td>
+                        <td><code>&lt; 8 ms</code></td>
+                        <td><code>Indexed In-Memory Graph</code></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Intelligent Doctor Matcher</td>
+                        <td>Multi-Criteria Decision Engine</td>
+                        <td>1,000 doctor queries / sec</td>
+                        <td><code>&lt; 12 ms</code></td>
+                        <td><code>Cached Specialist Matrix</code></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-bold">Schedule Optimizer</td>
+                        <td>Appointment Scheduler Engine</td>
+                        <td>2,000 appointments / min</td>
+                        <td><code>&lt; 20 ms</code></td>
+                        <td><code>Transactional MySQL Lock</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

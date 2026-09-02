@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MediRoute — Intelligent Hospital Emergency Decision Support System">
+    <title>{% block title %}MediRoute DSS{% endblock %}</title>
+
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/mediroute.css') }}" rel="stylesheet">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.id %}
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  SIDEBAR                                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<nav class="mr-sidebar" id="sidebar">
+
+    <!-- Brand -->
+    <div class="mr-sidebar-brand">
+        <div class="brand-icon"><i class="bi bi-heart-pulse-fill"></i></div>
+        <div class="brand-text">
+            <span class="brand-name">MediRoute</span>
+            <span class="brand-sub">DSS v1.0</span>
+        </div>
+    </div>
+
+    <div class="mr-sidebar-divider"></div>
+
+    {% if current_user.role == 'doctor' %}
+    <!-- Doctor Workspace -->
+    <div class="mr-sidebar-section">DOCTOR PORTAL</div>
+    <ul class="mr-nav">
+        <li>
+            <a href="{{ url_for('doctor.dashboard') }}"
+               class="mr-nav-link {% if request.endpoint == 'doctor.dashboard' %}active{% endif %}">
+                <i class="bi bi-speedometer2 text-primary"></i>
+                <span>Doctor Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('doctor.list_appointments') }}"
+               class="mr-nav-link {% if request.endpoint == 'doctor.list_appointments' %}active{% endif %}">
+                <i class="bi bi-journal-medical text-success"></i>
+                <span>My Appointments</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('patient.list_patients') }}"
+               class="mr-nav-link {% if request.endpoint and 'patient' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-person-lines-fill"></i>
+                <span>Patient Directory</span>
+            </a>
+        </li>
+    {% elif current_user.role == 'patient' %}
+    <!-- Patient Workspace -->
+    <div class="mr-sidebar-section">PATIENT PORTAL</div>
+    <ul class="mr-nav">
+        <li>
+            <a href="{{ url_for('patient.my_appointments') }}"
+               class="mr-nav-link {% if request.endpoint == 'patient.my_appointments' %}active{% endif %}">
+                <i class="bi bi-calendar2-check-fill text-success"></i>
+                <span>My Appointments</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.list_hospitals') }}"
+               class="mr-nav-link {% if request.endpoint == 'hospital.list_hospitals' %}active{% endif %}">
+                <i class="bi bi-geo-alt-fill text-primary"></i>
+                <span>Find a Hospital</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.list_doctors') }}"
+               class="mr-nav-link {% if request.endpoint == 'hospital.list_doctors' %}active{% endif %}">
+                <i class="bi bi-person-badge-fill text-info"></i>
+                <span>Doctor Roster</span>
+            </a>
+        </li>
+    </ul>
+    {% else %}
+    <!-- Core -->
+    <div class="mr-sidebar-section">CORE</div>
+    <ul class="mr-nav">
+        <li>
+            <a href="{{ url_for('dashboard.index') }}"
+               class="mr-nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                <i class="bi bi-speedometer2"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('patient.list_patients') }}" class="mr-nav-link {% if request.endpoint and 'patient' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-person-lines-fill"></i>
+                <span>Patients</span>
+            </a>
+        </li>
+        {% if current_user.role == 'operator' %}
+        <li>
+            <a href="{{ url_for('emergency.new_emergency') }}" class="mr-nav-link {% if request.endpoint == 'emergency.new_emergency' %}active{% endif %}">
+                <i class="bi bi-calendar2-plus-fill text-danger"></i>
+                <span>Book Appointment</span>
+            </a>
+        </li>
+        {% endif %}
+        <li>
+            <a href="{{ url_for('hospital.list_hospitals') }}" class="mr-nav-link {% if request.endpoint == 'hospital.list_hospitals' %}active{% endif %}">
+                <i class="bi bi-hospital"></i>
+                <span>Hospitals</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.list_doctors') }}" class="mr-nav-link {% if request.endpoint == 'hospital.list_doctors' %}active{% endif %}">
+                <i class="bi bi-person-badge"></i>
+                <span>Doctors</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('doctor.manage_daily_schedules') }}" class="mr-nav-link {% if request.endpoint == 'doctor.manage_daily_schedules' %}active{% endif %}">
+                <i class="bi bi-calendar2-range-fill text-info"></i>
+                <span>Doctor Daily Schedule</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.list_resources') }}" class="mr-nav-link {% if request.endpoint == 'hospital.list_resources' %}active{% endif %}">
+                <i class="bi bi-boxes"></i>
+                <span>Resources</span>
+            </a>
+        </li>
+        {% if current_user.role == 'admin' %}
+        <li>
+            <a href="{{ url_for('user.list_users') }}" class="mr-nav-link {% if request.endpoint and 'user.' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-people-fill text-info"></i>
+                <span>Manage Users &amp; Roles</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('reports.index') }}" class="mr-nav-link {% if request.endpoint and 'reports' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-file-earmark-bar-graph-fill text-warning"></i>
+                <span>Reports &amp; Analytics</span>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+
+    <div class="mr-sidebar-divider"></div>
+
+    <!-- Services -->
+    <div class="mr-sidebar-section">PATIENT SERVICES</div>
+    <ul class="mr-nav">
+        <li>
+            <a href="{{ url_for('hospital.list_hospitals') }}" class="mr-nav-link {% if request.endpoint == 'hospital.list_hospitals' %}active{% endif %}">
+                <i class="bi bi-geo-alt-fill"></i>
+                <span>Find a Hospital</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.list_doctors') }}" class="mr-nav-link {% if request.endpoint == 'hospital.list_doctors' %}active{% endif %}">
+                <i class="bi bi-person-badge-fill"></i>
+                <span>Doctor Consultation</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.list_resources') }}" class="mr-nav-link {% if request.endpoint == 'hospital.list_resources' %}active{% endif %}">
+                <i class="bi bi-heart-pulse-fill"></i>
+                <span>Resource Availability</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('hospital.appointment_history') }}" class="mr-nav-link {% if request.endpoint == 'hospital.appointment_history' %}active{% endif %}">
+                <i class="bi bi-calendar2-check-fill"></i>
+                <span>Appointment History</span>
+            </a>
+        </li>
+    </ul>
+    {% endif %}
+
+
+    <div class="mr-sidebar-divider"></div>
+
+    <ul class="mr-nav mb-3">
+        <li>
+            <a href="{{ url_for('pages.about') }}" class="mr-nav-link {% if request.endpoint == 'pages.about' %}active{% endif %}">
+                <i class="bi bi-info-circle"></i>
+                <span>About</span>
+            </a>
+        </li>
+        <li>
+            <a href="{{ url_for('auth.logout') }}" class="mr-nav-link text-danger-light">
+                <i class="bi bi-box-arrow-left"></i>
+                <span>Logout</span>
+            </a>
+        </li>
+    </ul>
+
+    <!-- User info at bottom -->
+    <div class="mr-sidebar-user">
+        <div class="user-avatar">{{ current_user.name[0]|upper }}</div>
+        <div class="user-info">
+            <div class="user-name">{{ current_user.name }}</div>
+            <div class="user-role">{{ current_user.role|title }}</div>
+        </div>
+    </div>
+
+</nav><!-- /sidebar -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  MAIN CONTENT WRAPPER                                      -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="mr-main">
+
+    <!-- Top navbar -->
+    <header class="mr-topbar">
+        <div class="topbar-left">
+            <button class="sidebar-toggle btn btn-sm" id="sidebarToggle" title="Toggle sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <nav aria-label="breadcrumb" class="ms-3">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('dashboard.index') }}">
+                            <i class="bi bi-house-fill"></i>
+                        </a>
+                    </li>
+                    {% block breadcrumb %}{% endblock %}
+                </ol>
+            </nav>
+        </div>
+        <div class="topbar-right">
+            <!-- Alert messages -->
+            <div class="topbar-alerts">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show mb-0 py-1 px-3 me-2" role="alert" style="font-size:.85rem;">
+                            {{ message }}
+                            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endwith %}
+            </div>
+            <!-- Role badge -->
+            <span class="role-badge role-{{ current_user.role }}">
+                <i class="bi bi-shield-fill me-1"></i>{{ current_user.role|title }}
+            </span>
+        </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="mr-content">
+{% else %}
+<div class="auth-wrapper">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible position-fixed top-0 start-50 translate-middle-x mt-3"
+                 style="z-index:9999;min-width:320px;" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endwith %}
+{% endif %}
+
+        {% block content %}{% endblock %}
+
+{% if current_user.id %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="mr-footer">
+        <span>MediRoute DSS &copy; 2025 — Academic PDSA Prototype</span>
+        <span class="ms-auto text-muted" style="font-size:.75rem;">
+            Not for clinical use &nbsp;|&nbsp; All data is synthetic
+        </span>
+    </footer>
+
+</div><!-- /mr-main -->
+{% else %}
+</div>
+{% endif %}
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<!-- MediRoute JS -->
+<script src="{{ url_for('static', filename='js/mediroute.js') }}"></script>
+{% block extra_scripts %}{% endblock %}
+
+</body>
+</html>
