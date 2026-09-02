@@ -1,3 +1,4 @@
+
 """
 routes/hospital_routes.py  (full CRUD)
 =======================================
@@ -7,6 +8,9 @@ Roles:
   doctor   → R only
   patient  → R only
 """
+
+
+
 
 import logging
 from datetime import datetime
@@ -21,7 +25,10 @@ hospital_bp = Blueprint('hospital', __name__)
 
 
 def _ensure_hemas_hospitals():
+
     """Ensure database has all Hemas Hospital branches in Sri Lanka, including Colombo."""
+
+
     db = get_db()
     try:
         with db.cursor() as cursor:
